@@ -1,0 +1,41 @@
+name: lcd-daemon C/C++ CI
+
+on:
+  push:
+    paths:
+      - '**'
+      - .github/workflows/lcd-daemon-c-cpp.yml
+      - '!**/debian/*'
+      - '!**/lcd-daemon.spec.in'
+      - '!**/doc/*'
+      - '!**.md'
+  workflow_dispatch:
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: checkout_main
+      uses: actions/checkout@v2
+      with:
+        path: main
+    - name: checkout_wiringpi
+      uses: actions/checkout@v2
+      with:
+        repository: mbhangui/wiringPi
+        path: wiringPi
+
+    - name: install_wiringPi
+      run: cd wiringPi;./default.configure; make; sudo make install-strip
+    - name: build_lcdDaemon
+      run: |
+        cd main; ./default.configure; make
+        make -C debian;make lcd-daemon.spec
+        make clean; /bin/rm -rf .git ../wiringPi autom4te.cache
+
+    - uses: actions/upload-artifact@v2
+      with:
+        name: lcdDaemon
+        path: ${{ github.workspace }}

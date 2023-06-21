@@ -12,7 +12,7 @@ AC_CANONICAL_TARGET
 PACKAGE=$PACKAGE_NAME
 VERSION=$PACKAGE_VERSION
 LT_INIT
-AM_INIT_AUTOMAKE([silent-rules])
+AM_INIT_AUTOMAKE([foreign silent-rules no-dist])
 AM_CONFIG_HEADER(config.h)
 AC_DEFINE_UNQUOTED(PACKAGE_BUGREPORT, "ccm-support@tagrem.com")
 if test "$GCC" = yes ; then

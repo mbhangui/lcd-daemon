@@ -67,3 +67,5 @@ RCS
 build-stamp
 config.h.in~
 lcd-daemon.spec
+*.BAK
+COPYING
