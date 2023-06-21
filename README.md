@@ -4,7 +4,7 @@
 
 lcd-daemon package is a package consisting of lcdDaemon and pilcd. lcdDaemon reads a local FIFO and reads data from pilcd and prints text supplied by pilcd on a LCD display. It works only for the Hitachi 4480 controller based 16x2 and 20x4 displays. The wiring scheme is as below.
 
-lcd-daemon uses libwiringpi and libwiringpidev from https://github.com/mbhangui/wiringPi
+lcd-daemon uses libwiringpi and libwiringpidev from https://github.com/mbhangui/wiringPi. The original Author of Wiring Pi is Gordon Henderson. Wiring Pi was what made me love the Raspberry Pis.
 
 Pin Name|WiringPI Number|RPI Board Number|LCD Pin Number
 --------|--------|---------|------------------------------
