@@ -1,0 +1,19 @@
+Source: lcd-daemon
+Section: electronics
+Priority: optional
+Maintainer: @email@
+Standards-Version: 3.9.1
+Homepage: https://github.com/mbhangui/lcd-daemon
+Build-Depends: debhelper (>= 9), coreutils
+
+Package: lcd-daemon
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: lcdDaemon is server application that accepts text from clients
+ to be printed on character LCD Display with Hitachi 44780 controller. It
+ uses the libwiringPi and libwiringPiDev library at
+ https://github.com/mbhangui/wiringPi
+ .
+ The libraries were originally written by Gordon Henderson. The version of
+ libwiringpi used here is an unofficial fork of wiringPi at
+ https://github.com/WiringPi/WiringPi.

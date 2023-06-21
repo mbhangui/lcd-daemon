@@ -1,0 +1,72 @@
+.\" vim: tw=75
+.LL 1i
+.TH lcd-daemon 8
+.SH NAME
+lcd-daemon \- Daemon for controlling LCD Displays with Hitachi 44780
+controller
+
+.SH SYNOPSYS
+.B lcd-daemon
+
+.SH DESCRIPTION
+.PP
+\fBlcd-daemon(1)\fR accepts data from \fBpilcd\fR(1) and prints data on LCD
+Displays with Hitachi 44780 controller. \fBlcd-daemon(8)\fR is generally
+started through supervise(8) using /service/lcd-daemon service.
+
+.SH RETURN VALUE
+0 if all steps were successful, non-zero otherwise. If any of the steps
+fail, a diagnostic message is printed.
+
+.SH Environment Variables
+\fBlcd-daemon(8)\fR uses the following environment variables.
+
+.TP
+LCDFIFO - \fIfifo\fR which \fBccm-play(1)\fR uses to communicate with
+\fBpilcd\fR(1).
+
+.TP
+PIN_RS - The pin on raspberry pi / banana Pi which is connected to the RS
+pin on the LCD display
+
+.TP
+PIN_EN - The pin on raspberry pi / banana Pi which is connected to the EN
+pin on the LCD display
+
+.TP
+PIN_D0 - The pin on raspberry pi / banana Pi which is connected to the Data
+0 pin on the LCD display
+
+.TP
+PIN_D1 - The pin on raspberry pi / banana Pi which is connected to the Data
+1 pin on the LCD display
+
+.TP
+PIN_D2 - The pin on raspberry pi / banana Pi which is connected to the Data
+2 pin on the LCD display
+
+.TP
+PIN_D3 - The pin on raspberry pi / banana Pi which is connected to the Data
+3 pin on the LCD display
+
+.TP
+PIN_D4 - The pin on raspberry pi / banana Pi which is connected to the Data
+4 pin on the LCD display
+
+.TP
+PIN_D5 - The pin on raspberry pi / banana Pi which is connected to the Data
+5 pin on the LCD display
+
+.TP
+PIN_D6 - The pin on raspberry pi / banana Pi which is connected to the Data
+6 pin on the LCD display
+
+.TP
+PIN_D7 - The pin on raspberry pi / banana Pi which is connected to the Data
+7 pin on the LCD display
+
+.SH AUTHORS
+Manvendra Bhangui <lcd_daemon@indimail.org>
+
+.SH "SEE ALSO"
+supervise(8), svc(8), envdir(8), multilog(8), pilcd(1)

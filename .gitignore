@@ -50,3 +50,20 @@ m4/lt~obsolete.m4
 # can automatically generate from config.status script
 # (which is called by configure script))
 Makefile
+*.lo
+*.o
+.deps
+Makefile
+config.h
+config.log
+config.status
+lcdDaemon
+libtool
+pilcd
+stamp-h1
+configure
+INSTALL
+RCS
+build-stamp
+config.h.in~
+lcd-daemon.spec

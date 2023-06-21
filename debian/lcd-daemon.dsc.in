@@ -1,0 +1,12 @@
+Format: 3.0 (quilt)
+Source: lcd-daemon
+Binary: lcd-daemon
+Architecture: any
+Version: @version@-@release@
+Maintainer: @email@
+Homepage: https://github.com/mbhangui/lcd-daemon
+Debtransform-Release: 1
+Debtransform-Files-Tar: debian.tar.gz
+Debtransform-Tar: lcd-daemon-@version@.tar.gz
+Standards-Version: 3.9.1
+Build-Depends: cdbs, debhelper (>= 9), gcc, binutils, coreutils, automake, autoconf, m4, gawk, libwiringpi-dev, libwiringpidev-dev

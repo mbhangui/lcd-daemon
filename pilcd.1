@@ -1,0 +1,66 @@
+.\" vim: tw=75
+.LL 1i
+.TH pilcd 1
+.SH NAME
+pilcd \- Print data on LCD Displays with Hitachi 44780 controller
+
+.SH SYNOPSYS
+\fBpilcd\fR [-s] [-C clear_type] -b bits -c cols -r rows -R rownum message
+or
+\fBpilcd\fR -C clear_type -b bits
+
+.SH DESCRIPTION
+.PP
+\fBpilcd(1)\fR prints data on LCD displays with Hitachi 44780 controllers.
+
+.SH OPTIONS
+.PP
+
+.TP 4
+\fB\-s\fR 
+Scrolls the message \fImessage\fR
+
+.TP
+\fB\-C\fR \fIclear_type\fR
+Clears the LCD display before displaying text. You can give the following
+values
+
+.EX
+1 clear the screen
+2 clear and initialize
+3 initializing LCD display
+4 clear screen without displaying text
+5 clear and initialize screen without displaying text
+6 initialize screen without displaying text
+.EE
+
+.TP
+\fB\-b\fR \fIbits\fR
+This is either the value '8' or '4' to specify 8 bit or 4 bit operation.
+
+.TP
+\fB\-c\fR \fIcols\fR
+This is either the value '20' or '16' to specify 20 character or 16
+character display
+
+.TP
+\fB\-r\fR \fIrows\fR
+This is either the value '4' or '2' to specify 4 rows or 2 rows display
+
+.TP
+\fB\-R\fR \fIrownum\fR
+The row on which to print the text. Values are 0, 1, 2 or 3
+
+.TP
+\fImessage\fR
+The text message to display on the screen.
+
+.SH RETURN VALUE
+0 if all steps were successful, non-zero otherwise. If any of the steps
+fail, a diagnostic message is printed.
+
+.SH AUTHORS
+Manvendra Bhangui <lcd_daemon@indimail.org>
+
+.SH "SEE ALSO"
+supervise(8), svc(8), envdir(8), multilog(8), lcdDaemon(8)

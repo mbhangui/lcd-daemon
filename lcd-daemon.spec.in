@@ -1,0 +1,96 @@
+%if %{defined _project}
+# define if building on openSUSE build service
+%global build_on_obs       1
+%global reconfigure_mode   0
+%else
+%define _project           local
+%global build_on_obs       0
+%global reconfigure_mode   0
+%global _hardened_build    1
+%endif
+
+%if %{defined nodebug}
+%global debug_package      %{nil}
+%endif
+%global _prefix            @prefix@
+%global mandir             @prefix@/share/man
+%global _libexecdir        @prefix@/libexec
+
+%if %build_on_obs == 1
+%global packager           Manvendra Bhangui <@email@>
+%endif
+
+%define see_base           For a description of lcd-daemon visit https://github.com/mbhangui/lcd-daemon
+
+%define servicedir /service
+Name: lcd-daemon
+Version: @version@
+Release: @release@%{?dist}
+Summary: LCD Daemon for Character LCD with Hitachi 44780 controller
+License: LGPLv3+
+Group: Applications/Multimedia
+URL: https://github.com/mbhangui/lcd-daemon
+BuildRequires: gcc gcc-c++ make autoconf automake libtool
+BuildRequires: glibc glibc-devel
+BuildRequires: libwiringpi-devel libwiringpidev-devel
+Source0: %{name}-%{version}.tar.gz
+
+%description
+lcdDaemon is server application that accepts text from clients  to be
+printed on character LCD Display with Hitachi 44780 controller. It uses the
+libwiringPi and libwiringPiDev library at
+https://github.com/mbhangui/wiringPi
+
+The libraries were originally written by Gordon Henderson. The version of
+libwiringpi used here is an unofficial fork of wiringPi at
+https://github.com/WiringPi/WiringPi.
+
+%{see_base}
+
+%prep
+%setup -q
+
+%build
+%configure --prefix=%{_prefix} --mandir=%{_prefix}/share/man --libexecdir=%{_prefix}/libexec
+
+%install
+%{__make} -s %{?_smp_mflags}
+%{__make} -s DESTDIR=%{buildroot} install-strip
+%{__mkdir_p} %{buildroot}%{_libexecdir}/%{name}
+%{__cp} create_service %{buildroot}%{_libexecdir}/%{name}/create_service
+%{__chmod} +x %{buildroot}%{_libexecdir}/%{name}/create_service
+find %{buildroot}%{_mandir} -type f -exec gzip -q {} \;
+
+%files
+%defattr (-,root,root)
+%doc COPYING README
+%dir %attr(755,root,root) %{_libexecdir}/%{name}
+%{_bindir}/lcdDaemon
+%{_bindir}/pilcd
+%{_libexecdir}/%{name}/create_service
+%ghost /var/log/indimail/lcd-daemon
+
+%docdir %{_mandir}
+%{_mandir}/man1/pilcd.1.gz
+%{_mandir}/man8/lcdDaemon.8.gz
+
+%post
+argv1=$1
+if [ $argv1 -eq 2 ] ; then # upgrade
+  exit 0
+fi
+# create lcd-daemon service
+%{_libexecdir}/%{name}/create_service --servicedir=%{servicedir}
+pid=`ps -ef|grep svscan|grep -E -v "multilog|grep"|awk '{print $2}'`
+if [ -n "$pid" ] ; then
+  kill -1 $pid
+fi
+
+if [ -x %{_prefix}/bin/svc ] ; then
+  %{__mv} /service/lcd-daemon /service/.lcd-daemon
+  %{_prefix}/bin/svc -dx /service/.lcd-daemon /service/.lcd-daemon/log
+  sleep 5
+  %{__rm} -rf /service/.lcd-daemon
+fi
+
+%changelog

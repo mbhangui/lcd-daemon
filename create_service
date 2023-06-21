@@ -1,0 +1,109 @@
+#!/bin/sh
+#
+# $Log: create_service,v $
+# Revision 1.1  2014-09-02 22:08:00+05:30  Cprogrammer
+# Initial revision
+#
+#
+# $Id: create_service,v 1.1 2014-09-02 22:08:00+05:30 Cprogrammer Exp mbhangui $
+#
+prefix=/usr
+LOGDIR=/var/log/svc
+
+create_lcd_service()
+{
+	/bin/mkdir -p "$DESTDIR"$servicedir/lcd-daemon/log
+	if [ $? -ne 0 ] ; then
+		echo "mkdir "$DESTDIR"$servicedir/lcd-daemon/log failed" 1>&2
+		exit 1
+	fi
+	conf_dir="$DESTDIR"$servicedir/lcd-daemon/variables
+	/bin/mkdir -p $conf_dir
+	if [ $? -ne 0 ] ; then
+		echo "mkdir $conf_dir failed" 1>&2
+		exit 1
+	fi
+	#lcd-daemon log script
+	(
+	echo "#!/bin/sh"
+	echo "#"
+	echo "# \$Id: create_service,v 1.1 2014-09-02 22:08:00+05:30 Cprogrammer Exp mbhangui $"
+	echo ""
+	echo "exec $prefix/bin/setuidgid qmaill \\"
+	echo "$prefix/bin/multilog t $LOGDIR/lcd-daemon"
+	) > "$DESTDIR"$servicedir/lcd-daemon/log/run
+	/bin/chmod +x "$DESTDIR"$servicedir/lcd-daemon/log/run
+
+	(
+	echo "#!/bin/sh"
+	echo "#"
+	echo "# \$Id: create_service,v 1.1 2014-09-02 22:08:00+05:30 Cprogrammer Exp mbhangui $"
+	echo "#"
+	echo
+	echo
+	echo "exec ${prefix}/bin/envdir ${servicedir}/lcd-daemon/variables ${prefix}/bin/lcdDaemon 2>&1"
+	) > "$DESTDIR"$servicedir/lcd-daemon/run
+	/bin/chmod +x "$DESTDIR"$servicedir/lcd-daemon/run
+
+	if [ ! -d $LOGDIR/lcd-daemon ] ; then
+		/bin/mkdir -p $LOGDIR/lcd-daemon
+		$chown qmaill:nofiles $LOGDIR/lcd-daemon
+	fi
+}
+
+usage()
+{
+prog_args=""
+if [ -f /usr/bin/less ] ; then
+	MORE=/usr/bin/less
+else
+	MORE=/usr/bin/more
+fi
+echo "Press ENTER for options, Cntrl C to quit" 1>&2
+read key
+$MORE <<EOF
+Usage: create_service [OPTION]
+EOF
+exit $1
+}
+
+################################# Main ##################################
+if [ -x /bin/chown ] ; then
+	chown=/bin/chown
+elif [ -x /usr/sbin/chown ] ; then
+	chown=/usr/sbin/chown
+elif [ -x /usr/bin/chown ] ; then
+	chown=/usr/bin/chown
+else
+	chown=/bin/chown
+fi
+prog_args="$0 $*"
+while test $# -gt 0; do
+    case "$1" in
+    	-*=*) optarg=`echo "$1" | sed 's/[-_a-zA-Z0-9]*=//'`
+		;;
+    	*) optarg=
+		;;
+    esac
+
+    case "$1" in
+    --user=*)
+	user=$optarg
+	;;
+
+	--destdir=*)
+	DESTDIR=$optarg
+	;;
+
+    --servicedir=*)
+	servicedir=$optarg
+	;;
+
+	esac
+	shift
+done
+if [ -z "$servicedir" ] ; then
+	echo "servicedir not provided" 1>&2
+	exit 1
+fi
+create_lcd_service

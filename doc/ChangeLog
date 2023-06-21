@@ -1,0 +1,7 @@
+* Wed Jun 21 2023 15:57:02 +0000 Manvendra Bhangui <@email@> @version@-@release@%{?dist}
+- 23/08/2015
+1.  Added pilcd command, lcdDaemon server
+2.  Created lcd daemon package
+- 21/06/2023
+3.  First public release
+

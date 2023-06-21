@@ -1,0 +1,52 @@
+#!/bin/sh
+if [ ! -f ./configure -o ! -f Makefile -o ! -f Makefile.in -o "$1" = "--force" ] ; then
+  echo "reconfiguring"
+  touch configure.ac
+  mkdir -p m4
+  autoreconf -fi
+fi
+if [ ! -f conf-release ] ; then
+  echo 1.1 > conf-release
+fi
+SYSTEM=$(uname -s)
+case "$SYSTEM" in
+  FreeBSD)
+  prefix=/usr/local
+  mandir=/usr/local/man
+  libdir=/usr/local/lib
+  pkgconfigdir=/usr/local/libdata/pkgconfig
+  ;;
+  Linux)
+  prefix=/usr
+  mandir=$prefix/share/man
+  arch=$(uname -m)
+  ;;
+  Darwin)
+  prefix=/opt/local
+  mandir=/opt/local/share/man
+  libdir=/opt/local/lib
+  ;;
+  *)
+  prefix=/usr
+  mandir=/usr/man
+  libdir=/usr/lib
+  ;;
+esac
+if [ -f Makefile ] ; then
+	case "$SYSTEM" in
+		Darwin|FreeBSD)
+		if [ $(stat -f %m configure.ac) -le $(stat -f %m Makefile) ] ; then
+			echo "Already configured"
+			exit 0
+		fi
+		;;
+		*)
+		if [ $(stat --format %Y configure.ac) -le $(stat --format %Y Makefile) ] ; then
+			echo "Already configured"
+			exit 0
+		fi
+		;;
+	esac
+fi
+./configure --prefix=$prefix --mandir=$mandir \
+	--libexecdir=$prefix/libexec
