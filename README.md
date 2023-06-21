@@ -2,9 +2,11 @@
 
 [![lcd-daemon C/C++ CI](https://github.com/mbhangui/lcd-daemon/actions/workflows/lcd-daemon-c-cpp.yml/badge.svg)](https://github.com/mbhangui/lcd-daemon/actions/workflows/lcd-daemon-c-cpp.yml)
 
-lcd-daemon package is a package consisting of lcdDaemon and pilcd. lcdDaemon reads a local FIFO and reads data from pilcd and prints text supplied by pilcd on a LCD display. It works only for the Hitachi 4480 controller based 16x2 and 20x4 displays. The wiring scheme is as below.
+lcd-daemon package is a package consisting of lcdDaemon and pilcd. lcdDaemon reads a local FIFO and reads data from pilcd and prints text supplied by pilcd on a LCD display. It works only for the Hitachi 4480 controller based 16x2 and 20x4 displays.
 
 lcd-daemon uses libwiringpi and libwiringpidev from https://github.com/mbhangui/wiringPi. The original Author of Wiring Pi is Gordon Henderson. Wiring Pi was what made me love the Raspberry Pis.
+
+The wiring scheme used by lcdDaemon is as below. If you wire it differently you don't have to rebuild the package. Instead you can set environment variables PIN\_RS, PIN\_EN, PIN\_D0 to PIN\_D7.
 
 Pin Name|WiringPI Number|RPI Board Number|LCD Pin Number
 --------|--------|---------|------------------------------
@@ -108,6 +110,8 @@ $ sudo apt-get update && sudo apt-get install daemontools
 lcdDaemon creates a fifo <u>/tmp/lcdfifo</u>. The location will change in the next release to <u>/run/lcd-daemon/lcdfifo</u>. Currently the permission of this file is <b>0644</b> owned by root. If you want any user to be able to print message on the lcd display, change the permission to <b>0666</b>.
 
 Next release will also allow the pilcd command to write message to the LCD display from anywhere in the network. I will be using my fork of the [ucspi-tcp](http://cr.yp.to/ucspi-tcp.html) to implement this feature. My fork of Dan's ucspi-tcp package is [here](https://github.com/mbhangui/indimail-mta/tree/master/ucspi-tcp-x).
+
+I need to upload the man pages for lcdDaemon and pilcd here. Will do it sometime later.
 
 ## Prebuilt Binaries
 
