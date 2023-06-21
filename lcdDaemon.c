@@ -66,18 +66,23 @@
 #include "str.h"
 
 /*
- * LCD_PIN WIRINGPI_PIN BOARD_PIN
- */
-#define PIN_EN 5  /*- 18 */
-#define PIN_RS 6  /*- 22 */
-#define PIN_D0 0  /*- ?? */
-#define PIN_D1 0  /*- ?? */
-#define PIN_D2 0  /*- ?? */
-#define PIN_D3 0  /*- ?? */
-#define PIN_D4 4  /*- 16 */
-#define PIN_D5 0  /*- 11 */
-#define PIN_D6 2  /*- 13 */
-#define PIN_D7 3  /*- 15 */
+LCD_PIN WIRINGPI_PIN RPI BOARD_PIN  LCD Pin Number */
+                     /*             01 Ground */
+                     /*             02 +5v */
+                     /*             03 Contrast Adjustment */
+#define PIN_RS 6     /*- 22         04 Register Select */
+                     /*             05 Read Write Pin (connected to Ground) */
+#define PIN_EN 5     /*- 18         06 Enable Pulse */
+#define PIN_D0 0     /*-            07 Not connected for 4 bit mode */
+#define PIN_D1 0     /*-            08 Not connected for 4 bit mode*/
+#define PIN_D2 0     /*-            09 Not connected for 4 bit mode*/
+#define PIN_D3 0     /*-            10 Not connected for 4 bit mode*/
+#define PIN_D4 4     /*- 16         11 */
+#define PIN_D5 0     /*- 11         12 */
+#define PIN_D6 2     /*- 13         13 */
+#define PIN_D7 3     /*- 15         14 */
+                     /*             15 Anode of backlight LED */
+                     /*             16 Cathode of backlight LED */
 
 static char     ssoutbuf[512], sserrbuf[512];
 static substdio ssout = SUBSTDIO_FDBUF(write, 1, ssoutbuf, sizeof ssoutbuf);
