@@ -1,5 +1,7 @@
 # lcd-daemon
 
+[![lcd-daemon C/C++ CI](https://github.com/mbhangui/lcd-daemon/actions/workflows/lcd-daemon-c-cpp.yml/badge.svg)](https://github.com/mbhangui/lcd-daemon/actions/workflows/lcd-daemon-c-cpp.yml)
+
 lcd-daemon package is a package consisting of lcdDaemon and pilcd. lcdDaemon reads a local FIFO and reads data from pilcd and prints text supplied by pilcd on a LCD display. It works only for the Hitachi 4480 controller based 16x2 and 20x4 displays. The wiring scheme is as below.
 
 lcd-daemon uses libwiringpi and libwiringpidev from https://github.com/mbhangui/wiringPi
