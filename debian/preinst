@@ -19,15 +19,19 @@ rm=/bin/rm
 case "$1" in
     install|upgrade)
 	if [ " $1" = " upgrade" ] ; then
-		set +e
-		if [ -x ${prefix}/bin/svok ] ; then
-			${prefix}/bin/svok /service/lcd-daemon
-			if [ $? -eq 0 ] ; then
-				touch /service/lcd-daemon/lcd-daemon.down
-				${prefix}/bin/svc -d /service/lcd-daemon >/dev/null 2>&1 || true
-			fi
-		fi
-		exit 0
+		if [ -d /run ] ; then
+		rundir=/run/svscan
+	elif [ -d /var/run ] ; then
+		rundir=/var/run/svscan
+	else
+		rundir=/service
+	fi
+	set +e
+	${prefix}/bin/svstat /service/lcd-daemon >/dev/null 2>&1
+	if [ $? -eq 0 ] ; then
+		mkdir -p ${rundir}/lcd-daemon
+		${prefix}/bin/svc -d /service/lcd-daemon
+		touch ${rundir}/lcd-daemon/.down
 	fi
 	mkdir -p /tmp/lcd-daemon
 	chmod 700 /tmp/lcd-daemon

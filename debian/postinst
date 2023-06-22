@@ -27,6 +27,12 @@ create_lcd_service()
 	/bin/mkdir -p ${servicedir}/lcd-daemon/log
 	conf_dir=${servicedir}/lcd-daemon/variables
 	/bin/mkdir -p $conf_dir
+	echo 200  > $conf_dir/SCROLL_DELAY
+	echo 0666 > $conf_dir/FIFO_MODE
+	echo 4    > $conf_dir/BIT_MODE
+	echo 20   > $conf_dir/LCD_WIDTH
+	echo 4    > $conf_dir/LCD_ROWS
+	echo "/usr/libexec/lcd-daemon/create_service --servicedir=${servicedir}" > $conf_dir/.options
 	#lcd-daemon log script
 	(
 	echo "#!/bin/sh"
@@ -84,12 +90,25 @@ esac
 
 #DEBHELPER#
 if [ $upgrade -eq 1 ] ; then # upgrade
+	# refresh lcd-daemon services
+	${prefix}/sbin/minisvc --servicedir=/service --refreshsvc="/service/lcd-daemon" --silent
+	# start lcd-daemon services after upgrade
+	if [ -d /run ] ; then
+		rundir=/run/svscan
+	elif [ -d /var/run ] ; then
+		rundir=/var/run/svscan
+	else
+		rundir=/service
+	fi
 	set +e
-	if [ -f /service/lcd-daemon/lcd-daemon.down ] ; then
-		${rm} -f /service/lcd-daemon/lcd-daemon.down
-		${prefix}/bin/svc -u /service/lcd-daemon 2>/dev/null || true
+	${prefix}/bin/svok /service/lcd-daemon >/dev/null 2>&1
+	if [ $? -eq 0 -a -f ${rundir}/lcd-daemon/.down ] ; then
+		rm -f ${rundir}/lcd-daemon/.down
+		${prefix}/bin/svc -u /service/lcd-daemon
 	fi
 	set -e
+	${prefix}/sbin/minisvc --servicedir=/service --service-name=lcd-daemon \
+		--export-variables=/service/lcd-daemon/variables/.variables --force --silent
 	exit 0
 fi
 
