@@ -1,5 +1,8 @@
 /*
  * $Log: lcdPrint.h,v $
+ * Revision 1.3  2023-06-22 23:43:00+05:30  Cprogrammer
+ * refactored lcdPrint()
+ *
  * Revision 1.2  2014-09-02 22:09:19+05:30  Cprogrammer
  * added scroll argument
  *
@@ -13,7 +16,7 @@
 #include "config.h"
 #endif
 #ifdef HAVE_STDARG_H
-int             lcdPrint    __P((substdio *, int, int, int, int, int, int, char *, ...));
+int             lcdPrint    __P((substdio *, int, int, int, char *, ...));
 #else
 int             lcdPrint    ();
 #endif

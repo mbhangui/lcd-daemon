@@ -23,15 +23,12 @@ servicedir=/service
 
 case "$1" in
     remove|upgrade|deconfigure)
-	(
-	echo "removing lcd-daemon supervise service"
 	if [ -x ${prefix}/bin/svc ] ; then
 		${mv} ${servicedir}/lcd-daemon ${servicedir}/.lcd-daemon
 		${prefix}/bin/svc -dx ${servicedir}/.lcd-daemon ${servicedir}/.lcd-daemon/log
 		sleep 5
 		${rm} -rf ${servicedir}/.lcd-daemon
 	fi
-	) > /tmp/lcd-daemon-uninstall.log 2>&1
     ;;
 
     failed-upgrade)

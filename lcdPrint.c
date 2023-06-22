@@ -1,5 +1,8 @@
 /*
  * $Log: lcdPrint.c,v $
+ * Revision 1.5  2023-06-22 23:42:54+05:30  Cprogrammer
+ * refactored code
+ *
  * Revision 1.4  2014-09-23 14:10:28+05:30  Cprogrammer
  * added documentation for lcdPrint()
  *
@@ -34,27 +37,25 @@
 #include "error.h"
 #include "str.h"
 #include "pilcd.h"
-#include "getEnvConfig.h"
+#include "env.h"
 #include "subprintf.h"
 
 #ifndef lint
-static char     sccsid[] = "$Id: lcdPrint.c,v 1.4 2014-09-23 14:10:28+05:30 Cprogrammer Exp mbhangui $";
+static char     sccsid[] = "$Id: lcdPrint.c,v 1.5 2023-06-22 23:42:54+05:30 Cprogrammer Exp mbhangui $";
 #endif
 
 /*
  * scroll - scroll the text
- * cols   - no of columns (16 or 20)
- * rows   - no of rows (2 or 4)
- * bits   - 4 bit or 8 bit data mode
  * rownum - 0 to 3, the row on which to display the text
  * clear  - 1 - clear lcd screen
  * clear  - 2 - clear and initialize lcd screen
  * clear  - 3 - initialize lcd screen
+ * message
  */
 #ifdef HAVE_STDARG_H
 #include <stdio.h>
 int
-lcdPrint(substdio *sserr, int scroll, int cols, int rows, int bits, int rownum, int clear, char *fmt, ...)
+lcdPrint(substdio *sserr, int scroll, int rownum, int clear, char *fmt, ...)
 #else
 int
 lcdPrint(va_alist)
@@ -62,7 +63,7 @@ lcdPrint(va_alist)
 #endif
 {
 	va_list         ap;
-	char           *ptr;
+	char           *ptr, *fifo_path;
 	char            buf[2048];
 	static char     outbuf[512];
 	int             fd;
@@ -84,9 +85,6 @@ lcdPrint(va_alist)
 	va_start(ap);
 	sserr = va_arg(ap, substdio *);	/* substdio descriptor */
 	scroll = va_arg(ap, int);
-	cols = va_arg(ap, int);
-	rows = va_arg(ap, int);
-	bits = va_arg(ap, int);
 	rownum = va_arg(ap, int);
 	clear = va_arg(ap, int);
 	fmt = va_arg(ap, char *);
@@ -94,19 +92,27 @@ lcdPrint(va_alist)
 	if (fmt)
 		(void) vsnprintf(buf, sizeof (buf), fmt, ap);
 	va_end(ap);
-	getEnvConfigStr(&ptr, "LCDFIFO", LCDFIFO);
-	if (access(ptr, F_OK)) {
-		if (subprintf(sserr, "access: %s: %s\n", ptr, error_str(errno)) == -1)
+	if (!(fifo_path = env_get("LCDFIFO"))) {
+		if (!access("/run", F_OK))
+			fifo_path = "/run/lcd-daemon/lcdfifo";
+		else
+		if (!access("/var/run", F_OK))
+			fifo_path = "/var/run/lcd-daemon/lcdfifo";
+		else
+			fifo_path = LCDFIFO;
+	}
+	if (access(fifo_path, F_OK)) {
+		if (subprintf(sserr, "access: %s: %s\n", fifo_path, error_str(errno)) == -1)
 			_exit (111);
 		else
 		if (substdio_flush(sserr))
 			_exit (111);
 		return (1);
 	}
-	if ((fd = open(ptr, O_RDWR|O_NDELAY)) == -1) {
+	if ((fd = open(fifo_path, O_RDWR|O_NDELAY)) == -1) {
 		if (errno == error_wouldblock)
 			return (1);
-		if (subprintf(sserr, "open: %s: %s\n", ptr, error_str(errno)) == -1)
+		if (subprintf(sserr, "open: %s: %s\n", fifo_path, error_str(errno)) == -1)
 			_exit (111);
 		else
 		if (substdio_flush(sserr))
@@ -115,8 +121,11 @@ lcdPrint(va_alist)
 	}
 	substdio_fdbuf(&ssout, write, fd, outbuf, sizeof(outbuf));
 	for (len = 0, ptr = buf; *ptr++; len++);
-	if (subprintf(&ssout, "%d %d %d %d %d %d :%s\n",
-		scroll || (len > 20 ? 1: 0), cols, rows, bits, rownum, clear, fmt ? buf : "clear screen") == -1) {
+	/*-
+	 * scroll rownum clear string
+	 */
+	if (subprintf(&ssout, "%d %d %d:%s\n",
+		scroll || (len > 20 ? 1: 0), rownum, clear, fmt ? buf : "clear screen") == -1) {
 		close(fd);
 		_exit (111);
 	} else

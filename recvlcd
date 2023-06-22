@@ -1,0 +1,18 @@
+#!/bin/sh
+#
+# $Id: $
+#
+# server: nc -u --exec recvlcd -l 7777 --keep-open
+# client: echo hello world | nc -u localhost 7777
+read line
+if [ -d /run ] ; then
+	echo "$line" > /run/lcd-daemon/lcdfifo
+elif [ -d /var/run ] ; then
+	echo "$line" > /var/run/lcd-daemon/lcdfifo
+else
+	echo "$line" > /tmp/lcd-daemon/lcdfifo
+fi
+
+#
+# $Log: $
+#

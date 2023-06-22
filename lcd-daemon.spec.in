@@ -34,6 +34,7 @@ BuildRequires: gcc gcc-c++ make autoconf automake libtool
 BuildRequires: glibc glibc-devel
 BuildRequires: libwiringpi-devel libwiringpidev-devel
 Source0: %{name}-%{version}.tar.gz
+Requires: daemontools coreutils
 
 %description
 lcdDaemon is server application that accepts text from clients  to be
@@ -56,19 +57,17 @@ https://github.com/WiringPi/WiringPi.
 %install
 %{__make} -s %{?_smp_mflags}
 %{__make} -s DESTDIR=%{buildroot} install-strip
-%{__mkdir_p} %{buildroot}%{_libexecdir}/%{name}
-%{__cp} create_service %{buildroot}%{_libexecdir}/%{name}/create_service
-%{__chmod} +x %{buildroot}%{_libexecdir}/%{name}/create_service
 find %{buildroot}%{_mandir} -type f -exec gzip -q {} \;
 
 %files
 %defattr (-,root,root)
 %doc COPYING README
 %dir %attr(755,root,root) %{_libexecdir}/%{name}
-%{_bindir}/lcdDaemon
+%{_sbindir}/lcdDaemon
 %{_bindir}/pilcd
 %{_libexecdir}/%{name}/create_service
-%ghost /var/log/indimail/lcd-daemon
+%{_libexecdir}/%{name}/recvlcd
+%ghost /var/log/svc/lcd-daemon
 
 %docdir %{_mandir}
 %{_mandir}/man1/pilcd.1.gz

@@ -22,21 +22,26 @@ edit = sed \
 	-e 's}@prefix\@}$(prefix)}g'
 
 lcdbindir=@prefix@/bin
-lcdbin_PROGRAMS = pilcd lcdDaemon
+lcdsbindir=@prefix@/sbin
+lcdbin_PROGRAMS = pilcd
+lcdsbin_PROGRAMS = lcdDaemon
 noinst_DATA = lcd-daemon.spec
 man_MANS=pilcd.1 lcdDaemon.8
 lcdlibexecdir=@libexecdir@/lcd-daemon
-lcdlibexec_SCRIPTS=create_service
+lcdlibexec_SCRIPTS=create_service recvlcd
 
 lcdDaemon_SOURCES = lcdDaemon.c
 lcdDaemon_DEPENDENCIES = getln.lo getln2.lo scan_ulong.lo stralloc_catb.lo \
 	stralloc_eady.lo subprintf.lo error_str.lo error.lo substdo.lo str_chr.lo \
-	byte_chr.lo byte_copy.lo str_len.lo alloc.lo alloc_re.lo stralloc_opyb.lo substdi.lo byte_cr.lo \
-	stralloc_pend.lo getEnvConfig.lo envread.lo scan_8long.lo str_diffn.lo
-lcdDaemon_LDADD = getln.lo getln2.lo scan_ulong.lo stralloc_catb.lo stralloc_eady.lo error_str.lo \
-	error.lo substdo.lo str_chr.lo subprintf.lo byte_chr.lo byte_copy.lo str_len.lo alloc.lo alloc_re.lo \
-	stralloc_pend.lo substdi.lo stralloc_opyb.lo byte_cr.lo getEnvConfig.lo envread.lo scan_8long.lo \
-	str_diffn.lo $(LIB_WIRINGPI) $(LIB_WIRINGPIDEV) -lpthread -lrt -lm -lcrypt
+	byte_chr.lo byte_copy.lo str_len.lo alloc.lo alloc_re.lo stralloc_opyb.lo \
+	stralloc_opys.lo substdi.lo byte_cr.lo stralloc_pend.lo getEnvConfig.lo \
+	envread.lo scan_8long.lo str_diffn.lo str_rchr.lo
+lcdDaemon_LDADD = getln.lo getln2.lo scan_ulong.lo stralloc_catb.lo stralloc_eady.lo \
+	error_str.lo error.lo substdo.lo str_chr.lo subprintf.lo byte_chr.lo byte_copy.lo \
+	str_len.lo alloc.lo alloc_re.lo stralloc_pend.lo substdi.lo stralloc_opyb.lo \
+	stralloc_opys.lo byte_cr.lo getEnvConfig.lo envread.lo scan_8long.lo \
+	str_diffn.lo str_rchr.lo $(LIB_WIRINGPI) $(LIB_WIRINGPIDEV) \
+	-lpthread -lrt -lm -lcrypt
 
 pilcd_SOURCES = pilcd.c
 pilcd_LDADD = substdio.lo substdo.lo str_len.lo lcdPrint.lo error_str.lo error.lo \

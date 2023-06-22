@@ -1,2 +1,4 @@
-usr/bin                /usr
-usr/share/man          /usr/share
+usr/bin                 /usr
+usr/sbin                /usr
+/usr/libexec/lcd-daemon /usr/libexec
+usr/share/man           /usr/share

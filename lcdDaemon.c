@@ -1,5 +1,8 @@
 /*
  * $Log: lcdDaemon.c,v $
+ * Revision 1.7  2023-06-22 23:39:36+05:30  Cprogrammer
+ * refactored code
+ *
  * Revision 1.6  2014-09-03 13:12:25+05:30  Cprogrammer
  * BUG. Mode was not specified for O_CREAT
  *
@@ -49,6 +52,9 @@
 #include <sys/file.h>
 #endif
 #endif
+#ifdef HAVE_INTTYPES_H
+#include <inttypes.h>
+#endif
 #if HAVE_WIRINGPI_H
 #include <wiringPi.h>
 #endif
@@ -60,6 +66,7 @@
 #include "stralloc.h"
 #include "scan.h"
 #include "getEnvConfig.h"
+#include "env.h"
 #include "subprintf.h"
 #include "getln.h"
 #include "error.h"
@@ -90,6 +97,7 @@ static substdio sserr = SUBSTDIO_FDBUF(write, 2, sserrbuf, sizeof(sserrbuf));
 static char     ssinbuf[512];
 static substdio ssin = SUBSTDIO_FDBUF(read, 0, ssinbuf, sizeof ssinbuf);
 static int      childpid[4] = {-1,-1,-1,-1};
+static stralloc _dirbuf = { 0 };
 
 static void
 flush(int type)
@@ -98,6 +106,14 @@ flush(int type)
 		_exit (111);
 	if ((!type || type == 1) && substdio_flush(&ssout))
 		_exit (111);
+}
+
+void
+die_nomem()
+{
+	if (subprintf(&sserr, "out of memory\n") == -1)
+		_exit(111);
+	_exit(111);
 }
 
 static void
@@ -154,10 +170,49 @@ die2()
 
 #ifndef HAVE_WIRINGPIDEV
 #include <stdio.h>
+#include <time.h>
 #define lcdPutchar(h, c)         {putchar((c)); fflush(stdout);}
 #define lcdPrintf(h, s1, s2, s3) {printf(s1, s2, s3); fflush(stdout);}
 #define lcdPosition(h, col, row) {printf("\033[%d;%dH", (row), (col)); fflush(stdout);}
 #define lcdClear(h)              {printf("\033[2J\033[H"); fflush(stdout);}
+#endif
+
+#ifndef HAVE_WIRINGPI
+
+static uint64_t epochMilli, epochMicro ;
+
+/*
+ * initialiseEpoch:
+ * Initialise our start-of-time variable to be the current unix
+ * time in milliseconds and microseconds.
+ */
+
+static void
+initialiseEpoch (void)
+{
+  struct timespec ts ;
+
+  clock_gettime (CLOCK_MONOTONIC_RAW, &ts) ;
+  epochMilli = (uint64_t)ts.tv_sec * (uint64_t)1000    + (uint64_t)(ts.tv_nsec / 1000000L) ;
+  epochMicro = (uint64_t)ts.tv_sec * (uint64_t)1000000 + (uint64_t)(ts.tv_nsec /    1000L) ;
+}
+
+/*
+ * millis:
+ * Return a number of milliseconds as an unsigned int.
+ * Wraps at 49 days.
+ */
+unsigned long
+millis (void)
+{
+  uint64_t now ;
+
+  struct  timespec ts ;
+
+  clock_gettime (CLOCK_MONOTONIC_RAW, &ts) ;
+  now  = (uint64_t)ts.tv_sec * (uint64_t)1000 + (uint64_t)(ts.tv_nsec / 1000000L) ;
+  return (now - epochMilli) ;
+}
 #endif
 
 #ifdef HAVE_FLOCK
@@ -168,7 +223,7 @@ lockfile(int type, int lockfd)
 
 	if (type) {
 		if ((fd = open("/tmp/lcdDaemon.lock", O_CREAT|O_TRUNC, 0600)) == -1) {
-			subprintf(&sserr, "%d: open: LOCK_EX: %s\n", getpid(), error_str(errno));
+			subprintf(&sserr, "%d: open: /tmp/lcdDaemon.lock: LOCK_EX: %s\n", getpid(), error_str(errno));
 			flush(2);
 			_exit (111);
 		}
@@ -195,19 +250,14 @@ lockfile(int type, int lockfd)
 void
 scrollMessage(int handle, int col, int delay, int width, char *message)
 {
-	int             i, count, flag;
+	int             count, flag;
+	uint64_t        i;
+	static uint64_t timer = 0;
 	static int      j, position = 0, start_col;
-#ifdef HAVE_WIRINGPIDEV
-	static int      timer = 0;
-#endif
 
-#ifdef HAVE_WIRINGPIDEV
-	if ((i = millis ()) < timer)
-		usleep(timer - i);
-	timer += delay ;
-#else
-	usleep(delay);
-#endif
+	if ((i = millis()) < timer)
+		return;
+	timer = millis() + delay ;
 	if (!start_col) {
 		start_col = col + 1;
 		j = col;
@@ -236,37 +286,231 @@ scrollMessage(int handle, int col, int delay, int width, char *message)
 	}
 }
 
+char *
+get_octal(mode_t mode)
+{
+	int             a[4];
+	int             i, d, count;
+	static char     octal[5];
+
+	d = mode;
+	for (count = i = 0;d != 0 && i < 4;++i) {
+		a[i] = (d % 8) + '0';
+		d /= 8;
+		count++;
+	}
+	d = 0;
+	octal[d++] = '0';
+	for (i = count - 1;i >= 0;--i)
+		octal[d++] = a[i];
+	octal[d] = 0;
+	return octal;
+}
+
+int
+r_mkdir(char *dir, mode_t mode)
+{
+	char           *ptr;
+	int             i;
+
+	if (!stralloc_copys(&_dirbuf, dir) || !stralloc_0(&_dirbuf))
+		die_nomem();
+	for (ptr = _dirbuf.s + 1; *ptr; ptr++) {
+		if (*ptr == '/') {
+			*ptr = 0;
+			if (access(_dirbuf.s, F_OK)) {
+				if ((i = mkdir(_dirbuf.s, mode)) == -1) {
+					if (subprintf(&sserr, "mkdir: %s: %s\n", _dirbuf.s, error_str(errno)) == -1)
+						_exit (111);
+					flush(2);
+					_exit (111);
+				}
+			}
+			*ptr = '/';
+		}
+	}
+	if (access(_dirbuf.s, F_OK)) {
+		if ((i = mkdir(_dirbuf.s, mode)) == -1) {
+			if (subprintf(&sserr, "mkdir: %s: %s\n", _dirbuf.s, error_str(errno)) == -1)
+				_exit (111);
+			flush(2);
+			_exit (111);
+		}
+	}
+	return (0);
+}
+
+void
+usage()
+{
+	if (subprintf(&sserr, "USAGE: lcdDaemon [-v] [-f fifo_path] [-m fifo_mode] [-d scroll_delay]") == -1 ||
+			subprintf(&sserr, "         -b bits -c cols -r rows\n") == -1)
+		_exit (111);
+	flush(2);
+	return;
+}
+
+int
+get_options(int argc, char **argv, int *verbose, char **fifo_path,
+		unsigned long *fifo_mode, int *bits, int *cols, int *rows, int *delay)
+{
+	int             c;
+	char            *ptr;
+
+	*verbose = 0;
+	*fifo_path = (char *) 0;
+	*fifo_mode = -1;
+	*bits = *rows = *cols = *delay = -1;
+	while ((c = getopt(argc, argv, "vf:m:c:r:b:d:")) != -1) {
+		switch (c)
+		{
+		case 'v':
+			*verbose = 1;
+			break;
+		case 'f':
+			*fifo_path = optarg;
+			break;
+		case 'm':
+			scan_8long(optarg, fifo_mode);
+			break;
+		case 'c':
+			scan_int(optarg, cols);
+			break;
+		case 'r':
+			scan_int(optarg, rows);
+			break;
+		case 'b':
+			scan_int(optarg, bits);
+			break;
+		case 'd':
+			scan_int(optarg, delay);
+			break;
+		default:
+			usage();
+			return (1);
+		}
+	}
+	if (*bits == -1) {
+		if (!(ptr = env_get("BIT_MODE"))) {
+			if (subprintf(&sserr, "LCD bit mode not specified (4 or 7 for 4bit or 8bit mode)\n") == -1)
+				_exit (111);
+			usage();
+			return (1);
+		} else
+			scan_int(ptr, bits);
+	}
+	if (!(*bits == 4 || *bits == 8)) {
+		if (subprintf(&sserr, "LCD bits must be 4 or 7 for 4 or 8 bit mode\n") == -1)
+			_exit (111);
+		usage();
+		return (1);
+	}
+	if (*cols == -1) {
+		if (!(ptr = env_get("LCD_WIDTH"))) {
+			if (subprintf(&sserr, "LCD width not specified\n") == -1)
+				_exit (111);
+			usage();
+			return (1);
+		} else
+			scan_int(ptr, cols);
+	}
+	if (!(*cols == 20 || *cols == 16)) {
+		if (subprintf(&sserr, "LCD width must be 16 or 20\n") == -1)
+			_exit (111);
+		usage();
+		return (1);
+	}
+	if (*rows == -1) {
+		if (!(ptr = env_get("LCD_ROWS"))) {
+			if (subprintf(&sserr, "LCD rows not specified\n") == -1)
+				_exit (111);
+			usage();
+			return (1);
+		} else
+			scan_int(ptr, rows);
+	}
+	if (!(*rows == 1 || *rows == 2 || *rows == 4)) {
+		if (subprintf(&sserr, "LCD rows must be 1, 2 or 4\n") == -1)
+			_exit (111);
+		usage();
+		return (1);
+	}
+	if (!*fifo_path && !(*fifo_path = env_get("LCDFIFO"))) {
+		if (!access("/run", F_OK))
+			*fifo_path = "/run/lcd-daemon/lcdfifo";
+		else
+		if (!access("/var/run", F_OK))
+			*fifo_path = "/var/run/lcd-daemon/lcdfifo";
+		else
+			*fifo_path = LCDFIFO;
+	}
+	if (*fifo_mode == -1) {
+		if ((ptr = env_get("FIFO_MODE")))
+			scan_8long(ptr, fifo_mode);
+		else
+			*fifo_mode = 0666;
+	}
+	if (*delay == -1) {
+		if ((ptr = env_get("SCROLL_DELAY")))
+			scan_int(ptr, delay);
+		else
+			*delay = 200;
+	}
+	return (0);
+}
+
 int
 main(int argc, char **argv)
 {
-	int             i, scroll = 0, cols, rows, bits, rpos, clear, lcd, fd, lockfd, match;
+	int             i, scroll = 0, cols, rows, bits, rpos, clear, lcd, fd,
+					verbose, lockfd, match, delay;
 	stralloc        line = {0};
-	char           *message, *ptr;
+	unsigned long   fifo_mode;
+	char           *message, *ptr, *fifo_path;
 #ifdef HAVE_WIRINGPIDEV
-	long            pin_rs, pin_en, pin_d0, pin_d1, pin_d2, pin_d3, pin_d4, pin_d5, pin_d6, pin_d7;
+	long            pin_rs, pin_en, pin_d0, pin_d1, pin_d2, pin_d3,
+					pin_d4, pin_d5, pin_d6, pin_d7;
 	extern struct  lcdDataStruct *lcds[];
 #endif
 
-	getEnvConfigStr(&ptr, "LCDFIFO", LCDFIFO);
-	if (access(ptr, F_OK) && mkfifo(ptr, 0666)) {
-		if (subprintf(&sserr, "mkfifo: %s: %s\n", ptr, error_str(errno)) == -1)
+	if (get_options(argc, argv, &verbose, &fifo_path, &fifo_mode, &bits, &cols, &rows, &delay))
+		return 1;
+	i = str_rchr(fifo_path, '/');
+	if (fifo_path[i]) {
+		if (!stralloc_copyb(&_dirbuf, fifo_path, i) ||
+				!stralloc_0(&_dirbuf))
+			die_nomem();
+		if (access(_dirbuf.s, F_OK) && r_mkdir(_dirbuf.s, 0755))
+			_exit(111);
+	}
+	if (access(fifo_path, F_OK) && mkfifo(fifo_path, 0666)) {
+		if (subprintf(&sserr, "mkfifo: %s: %s\n", fifo_path, error_str(errno)) == -1)
 			_exit (111);
 		flush(2);
 		return (1);
 	}
-	close(0);
-	if ((fd = open(ptr, O_RDWR)) == -1) {
-		if (subprintf(&sserr, "open: %s: %s\n", ptr, error_str(errno)) == -1)
+	if (chmod(fifo_path, (mode_t) fifo_mode)) {
+		if (subprintf(&sserr, "chmod: %o %s: %s\n", get_octal((mode_t) fifo_mode), fifo_path, error_str(errno)) == -1)
 			_exit (111);
 		flush(2);
 		_exit (111);
 	}
-#ifdef HAVE_WIRINGPIDEV
+	close(0);
+	if ((fd = open(fifo_path, O_RDWR)) == -1) {
+		if (subprintf(&sserr, "open: %s: %s\n", fifo_path, error_str(errno)) == -1)
+			_exit (111);
+		flush(2);
+		_exit (111);
+	}
+#ifdef HAVE_WIRINGPI
 	if (wiringPiSetup() == -1) {
 		if (subprintf(&sserr, "wiringPiSetup: %s\n", error_str(errno)) == -1)
+			_exit (111);
 		flush(2);
 		return (1);
 	}
+#else
+	initialiseEpoch();
 #endif
 	(void) signal(SIGTERM, (void (*)()) SigTerm);
 	(void) signal(SIGCHLD, (void (*)()) SigChild);
@@ -280,39 +524,14 @@ main(int argc, char **argv)
 		if (!match && line.len == 0)
 			break;
 		line.len--;
-		if (!stralloc_0(&line)) {
-			if (subprintf(&sserr, "out of memory: %s\n", error_str(errno)) == -1)
-				_exit (111);
-			flush(2);
-			_exit (1);
-		}
+		if (!stralloc_0(&line))
+			die_nomem();
 		i = str_chr(line.s, ':');
 		if (!line.s[i])
 			continue;
 		message = line.s + i + 1;
 		ptr = line.s;
 		scan_int(ptr, &scroll);
-		i = str_chr(ptr, ' ');
-		if (!ptr[i])
-			continue;
-		for (ptr += (i + 1);*ptr && isspace(*ptr); ptr++);
-		if (!*ptr)
-			continue;
-		scan_int(ptr, &cols);
-		i = str_chr(ptr, ' ');
-		if (!ptr[i])
-			continue;
-		for (ptr += (i + 1);*ptr && isspace(*ptr); ptr++);
-		if (!*ptr)
-			continue;
-		scan_int(ptr, &rows);
-		i = str_chr(ptr, ' ');
-		if (!ptr[i])
-			continue;
-		for (ptr += (i + 1);*ptr && isspace(*ptr); ptr++);
-		if (!*ptr)
-			continue;
-		scan_int(ptr, &bits);
 		i = str_chr(ptr, ' ');
 		if (!ptr[i])
 			continue;
@@ -353,12 +572,12 @@ main(int argc, char **argv)
 				lcds [i] = NULL ;
 			if (bits == 4) {
 				lcd = lcdInit(rows, cols, 4, pin_rs, pin_en, pin_d4,pin_d5,pin_d6,pin_d7, 0, 0, 0, 0);
-				if (subprintf(&ssout, "LCD init rows=%d, cols=%d, bits=%d, RS=%d, EN=%d Data Pins (%d,%d,%d,%d,0,0,0,0)\n",
+				if (verbose && subprintf(&ssout, "LCD init rows=%d, cols=%d, bits=%d, RS=%d, EN=%d Data Pins (%d,%d,%d,%d,0,0,0,0)\n",
 					rows, cols, bits, pin_rs, pin_en, pin_d4,pin_d5,pin_d6,pin_d7) == -1)
 					_exit (111);
 			} else {
 				lcd = lcdInit(rows, cols, 8, pin_rs, pin_en, pin_d0,pin_d1,pin_d2,pin_d3,pin_d4,pin_d5,pin_d6,pin_d7);
-				if (subprintf(&ssout, "LCD init rows=%d, cols=%d, bits=%d, RS=%d, EN=%d Data Pins (%d,%d,%d,%d,%d,%d,%d,%d)\n",
+				if (verbose && subprintf(&ssout, "LCD init rows=%d, cols=%d, bits=%d, RS=%d, EN=%d Data Pins (%d,%d,%d,%d,%d,%d,%d,%d)\n",
 					rows, cols, bits, pin_rs, pin_en, pin_d0,pin_d1,pin_d2,pin_d3, pin_d4,pin_d5,pin_d6,pin_d7) == -1)
 					_exit (111);
 			}
@@ -373,7 +592,7 @@ main(int argc, char **argv)
 #else
 		lcd = 0;
 #endif
-		if (subprintf(&ssout, "%d: Command scroll %d cols %d, rows %d, bits %d, rownum %d, clear %d pid %d [%s]\n",
+		if (verbose && subprintf(&ssout, "%d: Command scroll %d cols %d, rows %d, bits %d, rownum %d, clear %d pid %d [%s]\n",
 			lcd, scroll, cols, rows, bits, rpos, clear, childpid[rpos], message) == -1)
 			_exit (111);
 		flush(1);
@@ -383,7 +602,7 @@ main(int argc, char **argv)
 			continue;
 #ifdef HAVE_FLOCK
 		if (childpid[rpos] != -1) {
-			if (subprintf(&ssout, "Kill child %d row %d\n", childpid[rpos], rpos) == -1)
+			if (verbose && subprintf(&ssout, "Kill child %d row %d\n", childpid[rpos], rpos) == -1)
 				_exit(111);
 			flush(1);
 			if (kill(childpid[rpos], SIGUSR1)) {
@@ -396,7 +615,7 @@ main(int argc, char **argv)
 #else
 		for (i = 0; i < 4;i++) {
 			if (childpid[i] != -1) {
-				if (subprintf(&ssout, "Kill child %d row %d\n", childpid[i], i) == -1)
+				if (verbose && subprintf(&ssout, "Kill child %d row %d\n", childpid[i], i) == -1)
 					_exit(111);
 				flush(1);
 				if (kill(childpid[i], SIGUSR1)) {
@@ -417,7 +636,7 @@ main(int argc, char **argv)
 #ifndef HAVE_FLOCK
 			for (i = 0; i < 4;i++) {
 				if (childpid[i] != -1) {
-					if (subprintf(&ssout, "%d: Kill child %d row %d\n", getpid(), childpid[i], i) == -1)
+					if (verbose && subprintf(&ssout, "%d: Kill child %d row %d\n", getpid(), childpid[i], i) == -1)
 						_exit(111);
 					flush(1);
 					if (kill(childpid[i], SIGUSR1)) {
@@ -447,13 +666,13 @@ main(int argc, char **argv)
 						lcdPrintf(lcd, "%-*s", cols, " ");
 					}
 					lcdPosition(lcd, 0, rpos);
-					scrollMessage(lcd, 0, 1000, cols, message);
+					scrollMessage(lcd, 0, delay, cols, message);
 					lockfile(0, lockfd);
 					i = 1;
 				}
 				break;
 			default:
-				if (subprintf(&ssout, "fork pid=%d, rpos=%d\n", childpid[rpos], rpos) == -1)
+				if (verbose && subprintf(&ssout, "pid=%d, rpos=%d\n", childpid[rpos], rpos) == -1)
 					_exit (111);
 				flush(1);
 				break;

@@ -1,72 +1,183 @@
 .\" vim: tw=75
 .LL 1i
-.TH lcd-daemon 8
+.TH lcdDaemon 8
 .SH NAME
-lcd-daemon \- Daemon for controlling LCD Displays with Hitachi 44780
+lcdDaemon \- Daemon for controlling LCD Displays with Hitachi 44780
 controller
 
 .SH SYNOPSYS
-.B lcd-daemon
+\fBlcdDaemon\fR [-v] [-f \fIfifo\fR] [-m \fImode\fR]
+[-d \fIscroll_delay\fR] [-b \fIbits\fR] [-c \fIcols\fR] [-r \fIrows\fR]
 
 .SH DESCRIPTION
-.PP
-\fBlcd-daemon(1)\fR accepts data from \fBpilcd\fR(1) and prints data on LCD
-Displays with Hitachi 44780 controller. \fBlcd-daemon(8)\fR is generally
-started through supervise(8) using /service/lcd-daemon service.
+\fBlcdDaemon(1)\fR reads a named pipe \fIfifo\fR from clients to read
+messages to be printed on 20x4 or 16x2 LCD Displays with Hitachi 44780
+controller. lcdDaemon creates the directory for the named pipe if it
+doesn't exist. The file mode for \fIfifo\fR can be provided by \fImode\fR.
+\fIcols\fR and \fIrows\fR depends on the LCD display connected - either a
+20x4 display which has 20 colums and 4 rows or a 16x2 display which has 16
+columns and 2 rows. You can operate these displays in 4 bit mode or 8 bit
+mode. In 4 bit mode 4 terminals of the LCD data pins are connected (pins D4
+to D7). In 8 bit mode, all 8 data pins of the LCD display are connected
+(pins D0 to D7).
+
+\fBlcdDaemon(8)\fR is generally started through supervise(8) using
+/service/lcd-daemon service. You can however use your own method to start
+\fBlcdDaemon(8)\fR.
+
+\fBpilcd\fR(1) is one client that writes to the named pipe created by
+lcdDaemon. One can use any any client that writes to the named pipe created
+by lcdDaemon by using the following format below (<sp> stands for the white
+space character)
+
+.EX
+\fIscroll\fR<sp>\fIrownum\fR<sp>\fIclear\fR:\fImessage\fR
+.EE
+
+where
+.TP
+\fIscroll\fR
+value can be 0 or 1. 1 turns on scrolling
+.TP
+\fIrownum\fR
+value can be 0 or 1 for 16x2 display or 0, 1, 2 or 3 for 20x4 display.
+.TP
+\fIclear\fR
+The following values are supported for \fIclear\fR
+.EX
+1 clear the screen
+2 clear and initialize
+3 initializing LCD display
+4 clear screen without displaying text
+5 clear and initialize screen without displaying text
+6 initialize screen without displaying text
+.EE
+.TP
+\fImessage\fR
+Here \fImessage\fR is any string consisting of one or more words.
+
+.SH OPTIONS
+.TP
+\fB\-v\fR
+Turn on verbose output
+.TP
+\fB\-f\fR \fIfifo\fR
+Path to fifo
+.TP
+\fB\-m\fR \fImode\fR
+File mode to set for \fIfifo\fR on startup.
+.TP
+\fB\-b\fR \fIbits\fR
+This is either the value 8 or 4 to specify 8 bit or 4 bit operation.
+.TP
+\fB\-c\fR \fIcols\fR
+This is either the value 20 or 16 to specify 20 character or 16
+character display
+.TP
+\fB\-r\fR \fIrows\fR
+This is either the value 4 or 2 to specify 4 rows or 2 rows display
+
+.SH Environment Variables
+\fBlcdDaemon(8)\fR uses the following environment variables.
+
+.TP 13
+LCDFIFO
+If the -f option is not provided, lcdDaemon reads
+\fIrundir/lcd-daemon/lcdfifo\fR, where \fIrundir\fR is /run, /var/run or
+/tmp depending on your system. The fifo can be changed by setting
+\fBLCDFIFO\fR environment variable.
+
+.TP
+FIFO_MODE
+if the -m option is not provided, lcdDaemon sets 0666 as the file mode for
+\fIfifo\fR. The mode can be changed by setting \fBFIFO_MODE\fR
+environment variable.
+
+.TP
+VERBOSE
+If -v option is not provided the value of \fBVERBOSE\fR environment is
+used. Setting \fBVERBOSE=1\fR turns on verbose output and \fBVERBOSE=0\fR
+turns of verbose output.
+
+.TP
+SCROLL_DELAY
+Delay in milliseconds. Default 200
+
+.TP
+BIT_MODE
+If -b is not specifed, the value of this environment variable is used.
+There is no default. You have to either use the -b option or set
+\fBBIT_MODE\fR environment variable.
+
+.TP
+LCD_WIDTH
+If -c is not specifed, the value of this environment variable is used to
+specify the columns that the LCD display supports. There is no default. You
+have to either use the -c option or set \fBLCD_WIDTH\fR environment
+variable.
+
+.TP
+LCD_ROWS
+If -r is not specifed, the value of this environment variable is used to
+specify the rows that the LCD display supports. There is no default. You
+have to either use the -r option or set \fBLCD_ROWS\fR environment variable.
+
+.TP
+PIN_RS
+The pin on Raspberry Pi / Banana Pi which is connected to the RS pin on the
+LCD display.
+
+.TP
+PIN_EN
+The pin on Raspberry Pi / Banana Pi which is connected to the EN pin on the
+LCD display
+
+.TP
+PIN_D0
+The pin on Raspberry Pi / Banana Pi which is connected to the Data 0 pin on
+the LCD display
+
+.TP
+PIN_D1
+The pin on Raspberry Pi / Banana Pi which is connected to the Data 1 pin on
+the LCD display
+
+.TP
+PIN_D2
+The pin on Raspberry Pi / Banana Pi which is connected to the Data 2 pin on
+the LCD display
+
+.TP
+PIN_D3
+The pin on Raspberry Pi / Banana Pi which is connected to the Data 3 pin on
+the LCD display
+
+.TP
+PIN_D4
+The pin on Raspberry Pi / Banana Pi which is connected to the Data 4 pin on
+the LCD display
+
+.TP
+PIN_D5
+The pin on Raspberry Pi / Banana Pi which is connected to the Data 5 pin on
+the LCD display
+
+.TP
+PIN_D6
+The pin on Raspberry Pi / Banana Pi which is connected to the Data 6 pin on
+the LCD display
+
+.TP
+PIN_D7
+The pin on Raspberry Pi / Banana Pi which is connected to the Data 7 pin on
+the LCD display
 
 .SH RETURN VALUE
 0 if all steps were successful, non-zero otherwise. If any of the steps
 fail, a diagnostic message is printed.
 
-.SH Environment Variables
-\fBlcd-daemon(8)\fR uses the following environment variables.
-
-.TP
-LCDFIFO - \fIfifo\fR which \fBccm-play(1)\fR uses to communicate with
-\fBpilcd\fR(1).
-
-.TP
-PIN_RS - The pin on raspberry pi / banana Pi which is connected to the RS
-pin on the LCD display
-
-.TP
-PIN_EN - The pin on raspberry pi / banana Pi which is connected to the EN
-pin on the LCD display
-
-.TP
-PIN_D0 - The pin on raspberry pi / banana Pi which is connected to the Data
-0 pin on the LCD display
-
-.TP
-PIN_D1 - The pin on raspberry pi / banana Pi which is connected to the Data
-1 pin on the LCD display
-
-.TP
-PIN_D2 - The pin on raspberry pi / banana Pi which is connected to the Data
-2 pin on the LCD display
-
-.TP
-PIN_D3 - The pin on raspberry pi / banana Pi which is connected to the Data
-3 pin on the LCD display
-
-.TP
-PIN_D4 - The pin on raspberry pi / banana Pi which is connected to the Data
-4 pin on the LCD display
-
-.TP
-PIN_D5 - The pin on raspberry pi / banana Pi which is connected to the Data
-5 pin on the LCD display
-
-.TP
-PIN_D6 - The pin on raspberry pi / banana Pi which is connected to the Data
-6 pin on the LCD display
-
-.TP
-PIN_D7 - The pin on raspberry pi / banana Pi which is connected to the Data
-7 pin on the LCD display
-
 .SH AUTHORS
-Manvendra Bhangui <lcd_daemon@indimail.org>
+Manvendra Bhangui <lcd-daemon@indimail.org>
 
 .SH "SEE ALSO"
 supervise(8), svc(8), envdir(8), multilog(8), pilcd(1)

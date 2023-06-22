@@ -1,5 +1,8 @@
 /*
  * $Log: env.h,v $
+ * Revision 1.2  2023-06-22 23:39:17+05:30  Cprogrammer
+ * fixed compilation error
+ *
  * Revision 1.1  2014-09-01 20:05:24+05:30  Cprogrammer
  * Initial revision
  *

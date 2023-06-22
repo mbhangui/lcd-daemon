@@ -27,10 +27,10 @@ clean:
 	/bin/rm -f changelog control copyright lcd-daemon.dsc
 
 debian.tar.gz: changelog compat control copyright lcd-daemon.dirs \
-lcd-daemon.install README source/format \
+lcd-daemon.install README source/format postinst preinst prerm \
 rules README
 	cd .. && tar cf - debian/changelog debian/compat debian/control \
 		debian/copyright debian/lcd-daemon.dirs \
 		debian/lcd-daemon.install debian/README debian/source/format \
-		debian/rules | gzip -c >debian/$@
+		debian/rules debian/postinst debian/preinst debian/prerm | gzip -c >debian/$@
 

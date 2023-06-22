@@ -1,11 +1,14 @@
 #!/bin/sh
 #
 # $Log: create_service,v $
+# Revision 1.2  2023-06-22 23:39:06+05:30  Cprogrammer
+# refactore create_service
+#
 # Revision 1.1  2014-09-02 22:08:00+05:30  Cprogrammer
 # Initial revision
 #
 #
-# $Id: create_service,v 1.1 2014-09-02 22:08:00+05:30 Cprogrammer Exp mbhangui $
+# $Id: create_service,v 1.2 2023-06-22 23:39:06+05:30 Cprogrammer Exp mbhangui $
 #
 prefix=/usr
 LOGDIR=/var/log/svc
@@ -27,21 +30,35 @@ create_lcd_service()
 	(
 	echo "#!/bin/sh"
 	echo "#"
-	echo "# \$Id: create_service,v 1.1 2014-09-02 22:08:00+05:30 Cprogrammer Exp mbhangui $"
+	echo "# \$Id: create_service,v 1.2 2023-06-22 23:39:06+05:30 Cprogrammer Exp mbhangui $"
 	echo ""
 	echo "exec $prefix/bin/setuidgid qmaill \\"
-	echo "$prefix/bin/multilog t $LOGDIR/lcd-daemon"
+	echo "  $prefix/sbin/multilog t $LOGDIR/lcd-daemon"
 	) > "$DESTDIR"$servicedir/lcd-daemon/log/run
 	/bin/chmod +x "$DESTDIR"$servicedir/lcd-daemon/log/run
 
+	if [ -d /run ] ; then
+		echo "/run/lcd-daemon/lcdfifo" > $conf_dir/LCDFIFO
+	elif [ -d /var/run ] ; then
+		echo "/var/run/lcd-daemon/lcdfifo" > $conf_dir/LCDFIFO
+	else
+		echo "/tmp/lcd-daemon/lcdfifo" > $conf_dir/LCDFIFO
+	fi
+	echo 200  > $conf_dir/SCROLL_DELAY
+	echo 0666 > $conf_dir/FIFO_MODE
+	echo 4    > $conf_dir/BIT_MODE
+	echo 20   > $conf_dir/LCD_WIDTH
+	echo 4    > $conf_dir/LCD_ROWS
+	echo "/usr/libexec/lcd-daemon/create_service" > $conf_dir/.options
 	(
 	echo "#!/bin/sh"
 	echo "#"
-	echo "# \$Id: create_service,v 1.1 2014-09-02 22:08:00+05:30 Cprogrammer Exp mbhangui $"
+	echo "# \$Id: create_service,v 1.2 2023-06-22 23:39:06+05:30 Cprogrammer Exp mbhangui $"
 	echo "#"
 	echo
 	echo
-	echo "exec ${prefix}/bin/envdir ${servicedir}/lcd-daemon/variables ${prefix}/bin/lcdDaemon 2>&1"
+	echo "exec ${prefix}/bin/envdir ${servicedir}/lcd-daemon/variables \\"
+	echo "  ${prefix}/sbin/lcdDaemon 2>&1"
 	) > "$DESTDIR"$servicedir/lcd-daemon/run
 	/bin/chmod +x "$DESTDIR"$servicedir/lcd-daemon/run
 

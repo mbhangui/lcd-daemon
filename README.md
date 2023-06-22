@@ -2,7 +2,7 @@
 
 [![lcd-daemon C/C++ CI](https://github.com/mbhangui/lcd-daemon/actions/workflows/lcd-daemon-c-cpp.yml/badge.svg)](https://github.com/mbhangui/lcd-daemon/actions/workflows/lcd-daemon-c-cpp.yml)
 
-lcd-daemon package is a package consisting of lcdDaemon and pilcd. lcdDaemon reads a local FIFO and reads data from pilcd and prints text supplied by pilcd on a LCD display. It works only for the Hitachi 4480 controller based 16x2 and 20x4 displays.
+lcd-daemon package is a package consisting of lcdDaemon and pilcd. lcdDaemon reads a local named pipe (FIFO) and reads data from pilcd and prints text supplied by pilcd on a LCD display. It works only for the Hitachi 4480 controller based 16x2 and 20x4 displays.
 
 lcd-daemon uses libwiringpi and libwiringpidev from https://github.com/mbhangui/wiringPi. The original Author of Wiring Pi is Gordon Henderson. Wiring Pi was what made me love the Raspberry Pis.
 
@@ -26,6 +26,73 @@ PIN\_D6|2|13|13 data pin 6
 PIN\_D7|3|15|14 data pin 7
 -|-|-|15 Anode of backlight LED
 -|-|-|16 Cathode of backlight LED
+
+lcdDaemon reads a named pipe in line mode and expects the line to be in a simple format as detailed below. Here <sp> stands for whilte space.
+
+<u>scroll</u><sp><u>rownum</u><sp><u>clear</u>:<u>message</u>
+
+where
+ * scroll - value can be 0 or 1. 1 turns on scrolling
+ * rownum - value can be 0 or 1 for 16x2 display or 0, 1, 2 or 3 for 20x4 display.
+ * clear - The following values are supported for \fIclear\fR
+   1. clear the screen
+   2. clear and initialize
+   3. initializing LCD display
+   4. clear screen without displaying text
+   5. clear and initialize screen without displaying text
+   6. initialize screen without displaying text
+
+The <b>pilcd</b> is one client that writes to the named pipe in the above format. You can use any program/script to display text on the LCD display by using the above format. Expanding this further you can also have a simple server application that listens on a socket and write to the named pipe using the same format and thus allow the LCD display to be accessed from the network. Here is one such example that uses <b>nc</b> client from the <b>netcat</b> package to send a message over UDP to be displayed on the LCD screen.
+
+First let's write a simple script <u>/usr/bin/recvlcd</u> that just reads descriptor 0 and writes the line to /run/lcd-daemon/lcdfifo
+
+**Script /usr/bin/recvlcd**
+
+```
+#!/bin/sh
+# server: nc -u --exec recvlcd -l 7777 --keep-open
+# client: echo testing | nc -u localhost 7777
+read line
+if [ -d /run ] ; then
+	echo "$line" > /run/lcd-daemon/lcdfifo
+elif [ -d /var/run ] ; then
+	echo "$line" > /var/run/lcd-daemon/lcdfifo
+else
+	echo "$line" > /tmp/lcd-daemon/lcdfifo
+fi
+```
+
+Now on the server which has the LCD display connected, let us run <b>lcdDaemon</b> and a simple script that will receive packets over UDP.
+
+**Start lcdDaemon and run a UDP server on port 7777**
+
+```
+Start the lcdDaemon
+
+$ sudo /usr/sbin/lcdDaemon -b 4 -c 20 -r 4 &
+
+Send message locally using picd on the first row
+
+$ pilcd -R 0 Hi from Localhost
+
+Send message locally using echo command on the second row
+
+$ echo  0 1 0:Hi from local > /run/lcd-daemon/lcdfifo
+
+Use the nc command to listen over port 7777 and pass descriptor 0 to the script /usr/bin/recvlcd
+
+$ nc -u -exec /usr/bin/recvlcd -l 7777 --keep-open
+```
+
+**Send text to be displayed on LCD**
+
+We now have a LCD display to which messages can be sent over UDP to port 7777 from any host from the network. We will use the <b>nc</b> command to send the message.
+
+```
+Send message to a remote server 192.168.2.101 having the LCD display on row 3
+
+$ echo 1 2 0:Hi from overseas|nc -u 192.168.2.101 7777
+```
 
 # Installation
 
