@@ -20,11 +20,12 @@ case "$1" in
     install|upgrade)
 	if [ " $1" = " upgrade" ] ; then
 		if [ -d /run ] ; then
-		rundir=/run/svscan
-	elif [ -d /var/run ] ; then
-		rundir=/var/run/svscan
-	else
-		rundir=/service
+			rundir=/run/svscan
+		elif [ -d /var/run ] ; then
+			rundir=/var/run/svscan
+		else
+			rundir=/service
+		fi
 	fi
 	set +e
 	${prefix}/bin/svstat /service/lcd-daemon >/dev/null 2>&1

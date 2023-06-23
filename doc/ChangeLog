@@ -4,4 +4,8 @@
 2.  Created lcd daemon package
 - 21/06/2023
 3.  First public release
-
+- 23/06/2023
+4.  Specifying bits, cols, rows moved to lcdDaemon from pilcd
+5.  lcdDaemon.c: Added startup, shutdown message
+6.  configure.ac: corrected bugreport address
+7.  lcdDaemon.c: added -u option to run as non-root

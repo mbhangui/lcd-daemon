@@ -32,6 +32,7 @@ create_lcd_service()
 	echo 4    > $conf_dir/BIT_MODE
 	echo 20   > $conf_dir/LCD_WIDTH
 	echo 4    > $conf_dir/LCD_ROWS
+	echo 1    > $conf_dir/SAVE_CPU
 	echo "/usr/libexec/lcd-daemon/create_service --servicedir=${servicedir}" > $conf_dir/.options
 	#lcd-daemon log script
 	(
@@ -52,7 +53,7 @@ create_lcd_service()
 	echo
 	echo
 	echo "exec ${prefix}/bin/envdir ${servicedir}/lcd-daemon/variables \\"
-	echo "  ${prefix}/sbin/lcdDaemon 2>&1"
+	echo "  ${prefix}/sbin/lcdDaemon -i \"Display Initialized\" -s \"Display Turned Off\" 2>&1"
 	) > ${servicedir}/lcd-daemon/run
 	/bin/chmod +x ${servicedir}/lcd-daemon/run
 

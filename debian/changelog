@@ -1,6 +1,0 @@
-lcd-daemon (1.0-1.1) stable; urgency=low
-
-  * Created lcd daemon package
-  * First public release
-
- -- Manvendra Bhangui <lcd-daemon@indimail.org>  Thu, 22 Jun 2023 17:50:33 +0000

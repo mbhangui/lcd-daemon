@@ -1,6 +1,12 @@
 #!/bin/sh
 #
 # $Log: create_service,v $
+# Revision 1.5  2023-06-23 13:02:15+05:30  Cprogrammer
+# added startup/shutdown message
+#
+# Revision 1.4  2023-06-23 12:29:55+05:30  Cprogrammer
+# added SAVE_CPU env variable
+#
 # Revision 1.3  2023-06-23 00:24:45+05:30  Cprogrammer
 # fixed /service/lcd-daemon/variables/.options
 #
@@ -11,7 +17,7 @@
 # Initial revision
 #
 #
-# $Id: create_service,v 1.3 2023-06-23 00:24:45+05:30 Cprogrammer Exp mbhangui $
+# $Id: create_service,v 1.5 2023-06-23 13:02:15+05:30 Cprogrammer Exp mbhangui $
 #
 prefix=/usr
 LOGDIR=/var/log/svc
@@ -33,7 +39,7 @@ create_lcd_service()
 	(
 	echo "#!/bin/sh"
 	echo "#"
-	echo "# \$Id: create_service,v 1.3 2023-06-23 00:24:45+05:30 Cprogrammer Exp mbhangui $"
+	echo "# \$Id: create_service,v 1.5 2023-06-23 13:02:15+05:30 Cprogrammer Exp mbhangui $"
 	echo ""
 	echo "exec $prefix/bin/setuidgid qmaill \\"
 	echo "  $prefix/sbin/multilog t $LOGDIR/lcd-daemon"
@@ -52,16 +58,17 @@ create_lcd_service()
 	echo 4    > $conf_dir/BIT_MODE
 	echo 20   > $conf_dir/LCD_WIDTH
 	echo 4    > $conf_dir/LCD_ROWS
+	echo 1    > $conf_dir/SAVE_CPU
 	echo "/usr/libexec/lcd-daemon/create_service --servicedir=$servicedir" > $conf_dir/.options
 	(
 	echo "#!/bin/sh"
 	echo "#"
-	echo "# \$Id: create_service,v 1.3 2023-06-23 00:24:45+05:30 Cprogrammer Exp mbhangui $"
+	echo "# \$Id: create_service,v 1.5 2023-06-23 13:02:15+05:30 Cprogrammer Exp mbhangui $"
 	echo "#"
 	echo
 	echo
 	echo "exec ${prefix}/bin/envdir ${servicedir}/lcd-daemon/variables \\"
-	echo "  ${prefix}/sbin/lcdDaemon 2>&1"
+	echo "  ${prefix}/sbin/lcdDaemon -i \"Display Initialized\" -s \"Display Turned Off\" 2>&1"
 	) > "$DESTDIR"$servicedir/lcd-daemon/run
 	/bin/chmod +x "$DESTDIR"$servicedir/lcd-daemon/run
 

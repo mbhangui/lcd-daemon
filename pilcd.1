@@ -78,7 +78,8 @@ The text message to display on the screen.
 
 .SH RETURN VALUE
 0 if all steps were successful, non-zero otherwise. A diagnostic message is
-printed if pilcd encounters any error.
+printed if pilcd encounters any error. If any systerm error is encountered,
+the return value will be 111.
 
 .SH AUTHORS
 Manvendra Bhangui <lcd-daemon@indimail.org>

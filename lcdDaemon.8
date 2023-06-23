@@ -7,7 +7,10 @@ controller
 
 .SH SYNOPSYS
 \fBlcdDaemon\fR [-v] [-f \fIfifo\fR] [-m \fImode\fR]
-[-d \fIscroll_delay\fR] [-b \fIbits\fR] [-c \fIcols\fR] [-r \fIrows\fR]
+[-b \fIbits\fR] [-c \fIcols\fR] [-r \fIrows\fR]
+.nf
+  [-d \fIscroll_delay\fR] [-i startup_message] [-s shutdown_message]
+.fi
 
 .SH DESCRIPTION
 \fBlcdDaemon(1)\fR reads a named pipe \fIfifo\fR from clients to read
@@ -23,7 +26,8 @@ to D7). In 8 bit mode, all 8 data pins of the LCD display are connected
 
 \fBlcdDaemon(8)\fR is generally started through supervise(8) using
 /service/lcd-daemon service. You can however use your own method to start
-\fBlcdDaemon(8)\fR.
+\fBlcdDaemon(8)\fR. \fBlcdDaemon\fR uses the wiringPi library, which needs
+write access to /dev/mem and /dev/gpiomem and needs to run with uid 0.
 
 \fBpilcd\fR(1) is one client that writes to the named pipe created by
 lcdDaemon. One can use any any client that writes to the named pipe created
@@ -76,6 +80,16 @@ character display
 .TP
 \fB\-r\fR \fIrows\fR
 This is either the value 4 or 2 to specify 4 rows or 2 rows display
+.TP
+\fB\-d\fR \fIdelay\fR
+This can be used to change the default delay period in milliseconds of
+200ms for scrolling.
+.TP
+\fB\-i\fR \fIstartup_msg\fR
+Startup message to be displayed on LCD on lcdDaemon startup
+.TP
+\fB\-s\fR \fIshutdown_msg\fR
+Shutdown message to be displayed on LCD on lcdDaemon startup
 
 .SH Environment Variables
 \fBlcdDaemon(8)\fR uses the following environment variables.
@@ -174,7 +188,8 @@ the LCD display
 
 .SH RETURN VALUE
 0 if all steps were successful, non-zero otherwise. If any of the steps
-fail, a diagnostic message is printed.
+fail, a diagnostic message is printed. If any systerm error is encountered,
+the return value will be 111.
 
 .SH AUTHORS
 Manvendra Bhangui <lcd-daemon@indimail.org>

@@ -1,5 +1,8 @@
 #
 # $Log: configure.ac,v $
+# Revision 1.3  2023-06-23 12:29:48+05:30  Cprogrammer
+# fixed support address
+#
 # Revision 1.2  2023-06-22 23:38:30+05:30  Cprogrammer
 # updated configure.ac
 #
@@ -7,7 +10,7 @@
 # Initial revision
 #
 #
-# $Id: configure.ac,v 1.2 2023-06-22 23:38:30+05:30 Cprogrammer Exp mbhangui $
+# $Id: configure.ac,v 1.3 2023-06-23 12:29:48+05:30 Cprogrammer Exp mbhangui $
 #
 AC_PREREQ([2.64])
 AC_INIT([lcd-daemon],[m4_normalize(m4_include(conf-version))],[m4_normalize(m4_include(conf-email))],[lcd-daemon],[https://github.com/mbhangui/lcd-daemon])
@@ -17,7 +20,7 @@ VERSION=$PACKAGE_VERSION
 LT_INIT
 AM_INIT_AUTOMAKE([foreign silent-rules no-dist])
 AM_CONFIG_HEADER(config.h)
-AC_DEFINE_UNQUOTED(PACKAGE_BUGREPORT, "ccm-support@tagrem.com")
+AC_DEFINE_UNQUOTED(PACKAGE_BUGREPORT, "lcd-daemon@indimail.org")
 if test "$GCC" = yes ; then
 	CXXFLAGS="$CXXFLAGS -Wall"
 	CFLAGS="$CFLAGS -O4 -Wall"
