@@ -1,5 +1,8 @@
 /*
  * $Log: pilcd.c,v $
+ * Revision 1.6  2023-06-23 17:47:36+05:30  Cprogrammer
+ * interchanged rownum, scroll arguments
+ *
  * Revision 1.5  2023-06-22 23:40:20+05:30  Cprogrammer
  * refactored code
  *
@@ -125,5 +128,5 @@ main(int argc, char **argv)
 	}
 	message.len--;
 	stralloc_0(&message);
-	return (lcdPrint(&sserr, scroll, rpos, clear, message.len ? message.s : 0)); 
+	return (lcdPrint(&sserr, rpos, scroll, clear, message.len ? message.s : 0)); 
 }

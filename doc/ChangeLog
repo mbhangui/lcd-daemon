@@ -8,4 +8,5 @@
 4.  Specifying bits, cols, rows moved to lcdDaemon from pilcd
 5.  lcdDaemon.c: Added startup, shutdown message
 6.  configure.ac: corrected bugreport address
-7.  lcdDaemon.c: added -u option to run as non-root
+7.  lcdDaemon.c, pilcd.c, lcdPrint.c: interchanged rownum and scroll fields
+8.  lcdDaemon.c: prevent row number to be greater than rows supported by LCD

@@ -1,5 +1,9 @@
 /*
  * $Log: lcdDaemon.c,v $
+ * Revision 1.9  2023-06-23 17:43:22+05:30  Cprogrammer
+ * interchanged rownum and scroll fields
+ * prevent row number to be greater than rows supported by LCD
+ *
  * Revision 1.8  2023-06-23 12:30:09+05:30  Cprogrammer
  * added startup, shutdown message
  *
@@ -356,7 +360,7 @@ r_mkdir(char *dir, mode_t mode)
 void
 usage()
 {
-	if (subprintf(&sserr, "USAGE: lcdDaemon [-v] [-f fifo_path] [-m fifo_mode] [-d scroll_delay]") == -1 ||
+	if (subprintf(&sserr, "USAGE: lcdDaemon [-v] [-f fifo_path] [-m fifo_mode] [-d scroll_delay]\n") == -1 ||
 			subprintf(&sserr, "         -b bits -c cols -r rows\n") == -1)
 		_exit (111);
 	flush(2);
@@ -506,7 +510,7 @@ lcd_initialize(int bits, int cols, int row, int rs, int en,
 int
 main(int argc, char **argv)
 {
-	int             i, scroll = 0, bits, rpos, clear, fd,
+	int             i, bits, rpos, scroll = 0, clear, fd,
 					lockfd, match, delay;
 	stralloc        line = {0};
 	unsigned long   fifo_mode;
@@ -605,19 +609,20 @@ main(int argc, char **argv)
 		line.len--;
 		if (!stralloc_0(&line))
 			die_nomem();
+		/* process the line */
 		i = str_chr(line.s, ':');
 		if (!line.s[i])
 			continue;
 		message = line.s + i + 1;
 		ptr = line.s;
-		scan_int(ptr, &scroll);
+		scan_int(ptr, &rpos);
 		i = str_chr(ptr, ' ');
 		if (!ptr[i])
 			continue;
 		for (ptr += (i + 1);*ptr && isspace(*ptr); ptr++);
 		if (!*ptr)
 			continue;
-		scan_int(ptr, &rpos);
+		scan_int(ptr, &scroll);
 		i = str_chr(ptr, ' ');
 		if (!ptr[i])
 			continue;
@@ -647,6 +652,10 @@ main(int argc, char **argv)
 			lcd, scroll, cols, rows, bits, rpos, clear, childpid[rpos], message) == -1)
 			_exit (111);
 		flush(1);
+		if (rpos >= rows) {
+			subprintf(&sserr, "rownum cannot be greater than %d\n", rows - 1);
+			continue;
+		}
 		if (clear == 1 || clear == 2 || clear == 4 || clear == 5)
 			lcdClear(lcd);
 		if (clear == 4 || clear == 5 || clear == 6)

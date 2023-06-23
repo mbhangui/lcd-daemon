@@ -1,5 +1,8 @@
 /*
  * $Log: lcdPrint.c,v $
+ * Revision 1.6  2023-06-23 17:47:20+05:30  Cprogrammer
+ * interchanged rownum, scroll arguments
+ *
  * Revision 1.5  2023-06-22 23:42:54+05:30  Cprogrammer
  * refactored code
  *
@@ -41,12 +44,12 @@
 #include "subprintf.h"
 
 #ifndef lint
-static char     sccsid[] = "$Id: lcdPrint.c,v 1.5 2023-06-22 23:42:54+05:30 Cprogrammer Exp mbhangui $";
+static char     sccsid[] = "$Id: lcdPrint.c,v 1.6 2023-06-23 17:47:20+05:30 Cprogrammer Exp mbhangui $";
 #endif
 
 /*
- * scroll - scroll the text
  * rownum - 0 to 3, the row on which to display the text
+ * scroll - scroll the text
  * clear  - 1 - clear lcd screen
  * clear  - 2 - clear and initialize lcd screen
  * clear  - 3 - initialize lcd screen
@@ -55,7 +58,7 @@ static char     sccsid[] = "$Id: lcdPrint.c,v 1.5 2023-06-22 23:42:54+05:30 Cpro
 #ifdef HAVE_STDARG_H
 #include <stdio.h>
 int
-lcdPrint(substdio *sserr, int scroll, int rownum, int clear, char *fmt, ...)
+lcdPrint(substdio *sserr, int rownum, int scroll, int clear, char *fmt, ...)
 #else
 int
 lcdPrint(va_alist)
@@ -84,8 +87,8 @@ lcdPrint(va_alist)
 #else
 	va_start(ap);
 	sserr = va_arg(ap, substdio *);	/* substdio descriptor */
-	scroll = va_arg(ap, int);
 	rownum = va_arg(ap, int);
+	scroll = va_arg(ap, int);
 	clear = va_arg(ap, int);
 	fmt = va_arg(ap, char *);
 #endif
@@ -125,7 +128,7 @@ lcdPrint(va_alist)
 	 * scroll rownum clear string
 	 */
 	if (subprintf(&ssout, "%d %d %d:%s\n",
-		scroll || (len > 20 ? 1: 0), rownum, clear, fmt ? buf : "clear screen") == -1) {
+		rownum, scroll || (len > 20 ? 1: 0), clear, fmt ? buf : "clear screen") == -1) {
 		close(fd);
 		_exit (111);
 	} else

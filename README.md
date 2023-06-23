@@ -27,13 +27,13 @@ PIN\_D7|3|15|14 data pin 7
 -|-|-|15 Anode of backlight LED
 -|-|-|16 Cathode of backlight LED
 
-lcdDaemon reads a named pipe in line mode and expects the line to be in a simple format as detailed below. Here <sp> stands for whilte space.
+lcdDaemon reads a named pipe in line mode and expects the line to be in a simple format white space arguments as detailed below.
 
-<u>scroll</u><sp><u>rownum</u><sp><u>clear</u>:<u>message</u>
+<u>rownum</u> <u>scroll</u> <u>clear</u>:<u>message</u>
 
 where
- * scroll - value can be 0 or 1. 1 turns on scrolling
  * rownum - value can be 0 or 1 for 16x2 display or 0, 1, 2 or 3 for 20x4 display.
+ * scroll - value can be 0 or 1. 1 turns on scrolling
  * clear - The following values are supported for \fIclear\fR
    1. clear the screen
    2. clear and initialize
@@ -46,11 +46,17 @@ The <b>pilcd</b> is one client that writes to the named pipe in the above format
 
 First let's write a simple script <u>/usr/bin/recvlcd</u> that just reads descriptor 0 and writes the line to /run/lcd-daemon/lcdfifo
 
-**Script /usr/bin/recvlcd**
+**Script /usr/libexec/lcd-daemon/recvlcd**
 
 ```
 #!/bin/sh
-# server: nc -u --exec recvlcd -l 7777 --keep-open
+# run lcdDaemon in the background on /run/lcd-daemon/lcdfifo 
+# mkdir -p /run/lcd-daemon
+# lcdDaemon -f /run/lcd-daemon -b 4 -c 20 -r 4 &
+# run nc command
+# server: nc -u --exec /usr/libexec/lcd-daemon/recvlcd -l 7777 --keep-open
+# or
+# server: nc -k -u -l 7777 > /run/lcd-daemon/lcdfifo
 # client: echo testing | nc -u localhost 7777
 read line
 if [ -d /run ] ; then
@@ -77,11 +83,15 @@ $ pilcd -R 0 Hi from Localhost
 
 Send message locally using echo command on the second row
 
-$ echo  0 1 0:Hi from local > /run/lcd-daemon/lcdfifo
+$ echo  1 0 0:Hi from local > /run/lcd-daemon/lcdfifo
 
-Use the nc command to listen over port 7777 and pass descriptor 0 to the script /usr/bin/recvlcd
+Use the nc command to listen over port 7777 and pass descriptor 0 to the script /usr/bin/recvlcd. The form below can be used for nc that support the -exec argument
 
-$ nc -u -exec /usr/bin/recvlcd -l 7777 --keep-open
+$ nc -u -exec /usr/libexec/lcd-daemon/bin/recvlcd -l 7777 --keep-open
+
+Use the nc command to listen over port 7777 and redirect output to /run/lcd-daemon/lcdfifo. The form below can be used for nc that do not support the -exec argument
+
+$ nc -k -u -l 7777 > /run/lcd-daemon/lcdfifo
 ```
 
 **Send text to be displayed on LCD**
@@ -89,9 +99,9 @@ $ nc -u -exec /usr/bin/recvlcd -l 7777 --keep-open
 We now have a LCD display to which messages can be sent over UDP to port 7777 from any host from the network. We will use the <b>nc</b> command to send the message.
 
 ```
-Send message to a remote server 192.168.2.101 having the LCD display on row 3
+Scroll message to a remote server 192.168.2.101 having the LCD display on row 3
 
-$ echo 1 2 0:Hi from overseas|nc -u 192.168.2.101 7777
+$ echo 2 1 0:Hi from overseas | nc -u 192.168.2.101 7777
 ```
 
 # Installation
