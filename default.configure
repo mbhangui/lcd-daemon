@@ -13,23 +13,23 @@ case "$SYSTEM" in
   FreeBSD)
   prefix=/usr/local
   mandir=/usr/local/man
-  libdir=/usr/local/lib
-  pkgconfigdir=/usr/local/libdata/pkgconfig
+  libexecdir=/usr/local/libexec
   ;;
   Linux)
   prefix=/usr
   mandir=$prefix/share/man
+  libexecdir=/usr/libexec
   arch=$(uname -m)
   ;;
   Darwin)
   prefix=/opt/local
   mandir=/opt/local/share/man
-  libdir=/opt/local/lib
+  libexecdir=/opt/local/libexec
   ;;
   *)
   prefix=/usr
   mandir=/usr/man
-  libdir=/usr/lib
+  libexecdir=/usr/libexec
   ;;
 esac
 if [ -f Makefile ] ; then
@@ -49,4 +49,4 @@ if [ -f Makefile ] ; then
 	esac
 fi
 ./configure --prefix=$prefix --mandir=$mandir \
-	--libexecdir=$prefix/libexec
+	--libexecdir=$libexecdir

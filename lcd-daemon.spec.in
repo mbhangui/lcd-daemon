@@ -80,12 +80,12 @@ if [ -d /run ] ; then
 elif [ -d /var/run ] ; then
   rundir=/var/run/svscan
 else
-  rundir=/service
+  rundir=%{servicedir}
 fi
-%{_prefix}/bin/svstat /service/lcd-daemon >/dev/null 2>&1
+%{_prefix}/bin/svstat %{servicedir}/lcd-daemon >/dev/null 2>&1
 if [ $? -eq 0 ] ; then
   %{__mkdir_p} ${rundir}/lcd-daemon
-  %{_prefix}/bin/svc -d /service/lcd-daemon
+  %{_prefix}/bin/svc -d %{servicedir}/lcd-daemon
   touch ${rundir}/lcd-daemon/.down
 fi
 
@@ -97,31 +97,28 @@ if [ $argv1 -eq 2 ] ; then # upgrade
   elif [ -d /var/run ] ; then
     rundir=/var/run/svscan
   else
-    rundir=/service
+    rundir=%{servicedir}
   fi
-  %{_prefix}/sbin/minisvc --servicedir=/service --refreshsvc="/service/lcd-daemon" --silent
-  %{_prefix}/bin/svok /service/lcd-daemon >/dev/null 2>&1
+  %{_prefix}/sbin/minisvc --servicedir=%{servicedir} --refreshsvc="%{servicedir}/lcd-daemon" --silent
+  %{_prefix}/bin/svok %{servicedir}/lcd-daemon >/dev/null 2>&1
   if [ $? -eq 0 -a -f ${rundir}/lcd-daemon/.down ] ; then
-    %{__rm} -f ${rundir}/lcd-daemon/.down
-    %{_prefix}/bin/svc -u /service/lcd-daemon
+    %{_prefix}/bin/svc -u %{servicedir}/lcd-daemon
   fi
+  %{__rm} -f ${rundir}/lcd-daemon/.down
   exit 0
 fi
 # create lcd-daemon service
 %{_libexecdir}/%{name}/create_service --servicedir=%{servicedir}
-%{_prefix}/sbin/minisvc --servicedir=/service --service-name=lcd-daemon \
-  --export-variables=/service/lcd-daemon/variables/.variables --force --silent
-pid=`ps -ef|grep svscan|grep -E -v "multilog|grep"|awk '{print $2}'`
-if [ -n "$pid" ] ; then
-  kill -1 $pid
+%{_prefix}/sbin/minisvc --servicedir=%{servicedir} --service-name=lcd-daemon \
+  --export-variables=%{servicedir}/lcd-daemon/variables/.variables --force --silent
+if [ -x /usr/bin/svps ] ; then
+  /usr/bin/svps -h
 fi
 
 %preun
-if [ -x %{_prefix}/bin/svc ] ; then
-  %{__mv} /service/lcd-daemon /service/.lcd-daemon
-  %{_prefix}/bin/svc -dx /service/.lcd-daemon /service/.lcd-daemon/log
+if [ -x %{_prefix}/sbin/minisvc ] ; then
+  %{_prefix}/sbin/minisvc --rmsvc=%{servicedir}/lcd-daemon
   sleep 5
-  %{__rm} -rf /service/.lcd-daemon
 fi
 
 %changelog

@@ -24,19 +24,17 @@ case "$1" in
 		elif [ -d /var/run ] ; then
 			rundir=/var/run/svscan
 		else
-			rundir=/service
+			rundir=${servicedir}
 		fi
+		set +e
+		${prefix}/bin/svstat ${servicedir}/lcd-daemon >/dev/null 2>&1
+		if [ $? -eq 0 ] ; then
+			mkdir -p ${rundir}/lcd-daemon
+			${prefix}/bin/svc -d ${servicedir}/lcd-daemon
+			touch ${rundir}/lcd-daemon/.down
+		fi
+		exit 0
 	fi
-	set +e
-	${prefix}/bin/svstat /service/lcd-daemon >/dev/null 2>&1
-	if [ $? -eq 0 ] ; then
-		mkdir -p ${rundir}/lcd-daemon
-		${prefix}/bin/svc -d /service/lcd-daemon
-		touch ${rundir}/lcd-daemon/.down
-	fi
-	mkdir -p /tmp/lcd-daemon
-	chmod 700 /tmp/lcd-daemon
-	touch /tmp/lcd-daemon/.install
 	;;
 
     abort-upgrade)

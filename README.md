@@ -27,14 +27,14 @@ PIN\_D7|3|15|14 data pin 7
 -|-|-|15 Anode of backlight LED
 -|-|-|16 Cathode of backlight LED
 
-lcdDaemon reads a named pipe in line mode and expects the line to be in a simple format white space arguments as detailed below.
+lcdDaemon reads a named pipe in line mode and expects the line to be in a simple format of arguments, separated by whitespace, as detailed below.
 
 <u>rownum</u> <u>scroll</u> <u>clear</u>:<u>message</u>
 
 where
  * rownum - value can be 0 or 1 for 16x2 display or 0, 1, 2 or 3 for 20x4 display.
  * scroll - value can be 0 or 1. 1 turns on scrolling
- * clear - The following values are supported for \fIclear\fR
+ * clear - The following values are supported for <u>clear</u>
    1. clear the screen
    2. clear and initialize
    3. initializing LCD display

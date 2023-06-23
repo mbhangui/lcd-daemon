@@ -66,13 +66,8 @@ create_lcd_service()
 upgrade=0
 case "$1" in
     configure)
-	if [ -f /tmp/lcd-daemon/.install ] ; then
-		upgrade=0
-		/bin/rm -rf /tmp/lcd-daemon
-	else
-		if [ -n "$2" ] ; then
-			upgrade=1
-		fi
+	if [ -n "$2" ] ; then
+		upgrade=1
 	fi
     ;;
 
@@ -92,31 +87,30 @@ esac
 #DEBHELPER#
 if [ $upgrade -eq 1 ] ; then # upgrade
 	# refresh lcd-daemon services
-	${prefix}/sbin/minisvc --servicedir=/service --refreshsvc="/service/lcd-daemon" --silent
+	${prefix}/sbin/minisvc --servicedir=${servicedir} --refreshsvc="${servicedir}/lcd-daemon" --silent
 	# start lcd-daemon services after upgrade
 	if [ -d /run ] ; then
 		rundir=/run/svscan
 	elif [ -d /var/run ] ; then
 		rundir=/var/run/svscan
 	else
-		rundir=/service
+		rundir=${servicedir}
 	fi
 	set +e
-	${prefix}/bin/svok /service/lcd-daemon >/dev/null 2>&1
+	${prefix}/bin/svok ${servicedir}/lcd-daemon >/dev/null 2>&1
 	if [ $? -eq 0 -a -f ${rundir}/lcd-daemon/.down ] ; then
-		rm -f ${rundir}/lcd-daemon/.down
-		${prefix}/bin/svc -u /service/lcd-daemon
+		${prefix}/bin/svc -u ${servicedir}/lcd-daemon
 	fi
+	rm -f ${rundir}/lcd-daemon/.down
 	set -e
-	${prefix}/sbin/minisvc --servicedir=/service --service-name=lcd-daemon \
-		--export-variables=/service/lcd-daemon/variables/.variables --force --silent
+	${prefix}/sbin/minisvc --servicedir=${servicedir} --service-name=lcd-daemon \
+		--export-variables=${servicedir}/lcd-daemon/variables/.variables --force --silent
 	exit 0
 fi
 
 create_lcd_service
 ${rm} -f ${servicedir}/lcd-daemon/down
-pid=`ps -ef|grep svscan|grep -E -v "multilog|grep"|awk '{print $2}'`
-if [ -n "$pid" ] ; then
-	kill -1 $pid
+if [ -x /usr/bin/svps ] ; then
+	svps -h
 fi
 exit 0

@@ -23,11 +23,8 @@ servicedir=/service
 
 case "$1" in
     remove|upgrade|deconfigure)
-	if [ -x ${prefix}/bin/svc ] ; then
-		${mv} ${servicedir}/lcd-daemon ${servicedir}/.lcd-daemon
-		${prefix}/bin/svc -dx ${servicedir}/.lcd-daemon ${servicedir}/.lcd-daemon/log
-		sleep 5
-		${rm} -rf ${servicedir}/.lcd-daemon
+	if [ "$1" = "remove" -a -x ${prefix}/sbin/minisvc -a -d ${servicedir}/lcd-daemon ] ; then
+		${prefix}/sbin/minisvc --rmsvc=${servicedir}/lcd-daemon
 	fi
     ;;
 

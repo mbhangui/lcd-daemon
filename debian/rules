@@ -27,7 +27,7 @@ build-stamp:
 	#
 	./configure $(shell dpkg-buildflags --export=cmdline) \
 		--prefix=$(prefix) --libexecdir=$(prefix)/libexec \
-		--with-pkgconfigdir=/usr/lib/pkgconfig --mandir=$(mandir)
+		--mandir=$(mandir)
 
 	$(MAKE) -s DESTDIR=$(DESTDIR)
 	${rm} -rf $(DESTDIR)$(prefix)/$(libd)/*.la
