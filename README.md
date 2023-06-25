@@ -10,8 +10,8 @@ The wiring scheme used by lcdDaemon is as below. If you wire it differently you 
 
 Pin Name|WiringPI Number|RPI Board Number|LCD Pin Number
 --------|--------|---------|------------------------------
--|-|-|01 Ground 
--|-|-|02 +5v 
+-|-|6|01 Ground 
+-|-|2|02 +5v 
 -|-|-|03 Contrast Adjustment 
 PIN\_RS|6|22|04 Register Select 
 -|-|-|05 Read Write Pin (connected to Ground)
@@ -24,8 +24,8 @@ PIN\_D4|4|16|11 data pin 4
 PIN\_D5|0|11|12 data pin 5
 PIN\_D6|2|13|13 data pin 6
 PIN\_D7|3|15|14 data pin 7
--|-|-|15 Anode of backlight LED
--|-|-|16 Cathode of backlight LED
+-|-|2|15 Anode of backlight LED
+-|-|9|16 Cathode of backlight LED
 
 lcdDaemon reads a named pipe and a UDP socket in line mode and expects the line to be in a simple format of arguments, separated by whitespace, as detailed below.
 
