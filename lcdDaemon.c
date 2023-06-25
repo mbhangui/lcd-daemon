@@ -1,5 +1,5 @@
 /*
- * $Id: lcdDaemon.c,v 1.10 2023-06-25 09:38:11+05:30 Cprogrammer Exp mbhangui $
+ * $Id: lcdDaemon.c,v 1.11 2023-06-25 11:59:23+05:30 Cprogrammer Exp mbhangui $
  */
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -602,6 +602,8 @@ read_data(int fd, int bits, int cols, int rows, int delay)
 #else
 		lcd = 0;
 #endif
+		if (str_len(message) > cols)
+			scroll = 1;
 		if (verbose && subprintf(&ssout, "%d: Command scroll %d cols %d, rows %d, bits %d, rownum %d, clear %d pid %d [%s]\n",
 			lcd, scroll, cols, rows, bits, rpos, clear, childpid[rpos], message) == -1)
 			_exit (111);
@@ -850,6 +852,9 @@ main(int argc, char **argv)
 
 /*
  * $Log: lcdDaemon.c,v $
+ * Revision 1.11  2023-06-25 11:59:23+05:30  Cprogrammer
+ * automatically scroll if length is greater than lcd width
+ *
  * Revision 1.10  2023-06-25 09:38:11+05:30  Cprogrammer
  * added udp listener
  *
