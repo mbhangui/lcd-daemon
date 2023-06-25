@@ -2,7 +2,7 @@
 
 [![lcd-daemon C/C++ CI](https://github.com/mbhangui/lcd-daemon/actions/workflows/lcd-daemon-c-cpp.yml/badge.svg)](https://github.com/mbhangui/lcd-daemon/actions/workflows/lcd-daemon-c-cpp.yml)
 
-lcd-daemon package is a package consisting of lcdDaemon and pilcd. lcdDaemon reads a local named pipe (FIFO) and reads data from pilcd and prints text supplied by pilcd on a LCD display. It works only for the Hitachi 4480 controller based 16x2 and 20x4 displays.
+lcd-daemon package is a package consisting of lcdDaemon and pilcd. lcdDaemon implements a UDP server and also reads a local named pipe (FIFO) to read data from local and remote clients to print text on a LCD display. It works only for the Hitachi 4480 controller based 16x2 and 20x4 displays. The pilcd client can send text locally to lcdDaemon. One can also use the echo command instead of the pilcd command to write print the text on the LCD.
 
 lcd-daemon uses libwiringpi and libwiringpidev from https://github.com/mbhangui/wiringPi. The original Author of Wiring Pi is Gordon Henderson. Wiring Pi was what made me love the Raspberry Pis.
 
@@ -10,8 +10,8 @@ The wiring scheme used by lcdDaemon is as below. If you wire it differently you 
 
 Pin Name|WiringPI Number|RPI Board Number|LCD Pin Number
 --------|--------|---------|------------------------------
--|-|-|01 Ground 
--|-|-|02 +5v 
+-|-|6|01 Ground 
+-|-|2|02 +5v 
 -|-|-|03 Contrast Adjustment 
 PIN\_RS|6|22|04 Register Select 
 -|-|-|05 Read Write Pin (connected to Ground)
@@ -24,10 +24,10 @@ PIN\_D4|4|16|11 data pin 4
 PIN\_D5|0|11|12 data pin 5
 PIN\_D6|2|13|13 data pin 6
 PIN\_D7|3|15|14 data pin 7
--|-|-|15 Anode of backlight LED
--|-|-|16 Cathode of backlight LED
+-|-|2|15 Anode of backlight LED
+-|-|9|16 Cathode of backlight LED
 
-lcdDaemon reads a named pipe in line mode and expects the line to be in a simple format of arguments, separated by whitespace, as detailed below.
+lcdDaemon reads a named pipe and a UDP socket in line mode and expects the line to be in a simple format of arguments, separated by whitespace, as detailed below.
 
 <u>rownum</u> <u>scroll</u> <u>clear</u>:<u>message</u>
 
@@ -42,35 +42,11 @@ where
    5. clear and initialize screen without displaying text
    6. initialize screen without displaying text
 
-The <b>pilcd</b> is one client that writes to the named pipe in the above format. You can use any program/script to display text on the LCD display by using the above format. Expanding this further you can also have a simple server application that listens on a socket and write to the named pipe using the same format and thus allow the LCD display to be accessed from the network. Here is one such example that uses <b>nc</b> client from the <b>netcat</b> package to send a message over UDP to be displayed on the LCD screen.
+The <b>pilcd</b> is one client that writes to the named pipe in the above format. You can use any program/script to display text on the LCD display by using the above format. Expanding this further you can use any UDP client to send text to be printed on the LCD screen by sending the text to UDP port 1806.
 
-First let's write a simple script <u>/usr/bin/recvlcd</u> that just reads descriptor 0 and writes the line to /run/lcd-daemon/lcdfifo
+## Example
 
-**Script /usr/libexec/lcd-daemon/recvlcd**
-
-```
-#!/bin/sh
-# run lcdDaemon in the background on /run/lcd-daemon/lcdfifo 
-# mkdir -p /run/lcd-daemon
-# lcdDaemon -f /run/lcd-daemon -b 4 -c 20 -r 4 &
-# run nc command
-# server: nc -u --exec /usr/libexec/lcd-daemon/recvlcd -l 7777 --keep-open
-# or
-# server: nc -k -u -l 7777 > /run/lcd-daemon/lcdfifo
-# client: echo testing | nc -u localhost 7777
-read line
-if [ -d /run ] ; then
-	echo "$line" > /run/lcd-daemon/lcdfifo
-elif [ -d /var/run ] ; then
-	echo "$line" > /var/run/lcd-daemon/lcdfifo
-else
-	echo "$line" > /tmp/lcd-daemon/lcdfifo
-fi
-```
-
-Now on the server which has the LCD display connected, let us run <b>lcdDaemon</b> and a simple script that will receive packets over UDP.
-
-**Start lcdDaemon and run a UDP server on port 7777**
+On the server which has the LCD display connected, let us run <b>lcdDaemon</b>
 
 ```
 Start the lcdDaemon
@@ -83,25 +59,11 @@ $ pilcd -R 0 Hi from Localhost
 
 Send message locally using echo command on the second row
 
-$ echo  1 0 0:Hi from local > /run/lcd-daemon/lcdfifo
+$ echo 1 0 0:Hi from local > /run/lcd-daemon/lcdfifo
 
-Use the nc command to listen over port 7777 and pass descriptor 0 to the script /usr/bin/recvlcd. The form below can be used for nc that support the -exec argument
-
-$ nc -u -exec /usr/libexec/lcd-daemon/bin/recvlcd -l 7777 --keep-open
-
-Use the nc command to listen over port 7777 and redirect output to /run/lcd-daemon/lcdfifo. The form below can be used for nc that do not support the -exec argument
-
-$ nc -k -u -l 7777 > /run/lcd-daemon/lcdfifo
-```
-
-**Send text to be displayed on LCD**
-
-We now have a LCD display to which messages can be sent over UDP to port 7777 from any host from the network. We will use the <b>nc</b> command to send the message.
-
-```
 Scroll message to a remote server 192.168.2.101 having the LCD display on row 3
 
-$ echo 2 1 0:Hi from overseas | nc -u 192.168.2.101 7777
+$ echo 2 1 0:Hi from overseas | nc -u 192.168.2.101 1806
 ```
 
 # Installation
@@ -183,10 +145,6 @@ $ sudo apt-get update && sudo apt-get install daemontools
 ```
 
 **TODO**
-
-lcdDaemon creates a fifo <u>/tmp/lcdfifo</u>. The location will change in the next release to <u>/run/lcd-daemon/lcdfifo</u>. Currently the permission of this file is <b>0644</b> owned by root. If you want any user to be able to print message on the lcd display, change the permission to <b>0666</b>.
-
-Next release will also allow the pilcd command to write message to the LCD display from anywhere in the network. I will be using my fork of the [ucspi-tcp](http://cr.yp.to/ucspi-tcp.html) to implement this feature. My fork of Dan's ucspi-tcp package is [here](https://github.com/mbhangui/indimail-mta/tree/master/ucspi-tcp-x).
 
 I need to upload the man pages for lcdDaemon and pilcd here. Will do it sometime later.
 

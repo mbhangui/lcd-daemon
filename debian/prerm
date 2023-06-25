@@ -23,9 +23,6 @@ servicedir=/service
 
 case "$1" in
     remove|upgrade|deconfigure)
-	if [ "$1" = "remove" -a -x ${prefix}/sbin/minisvc -a -d ${servicedir}/lcd-daemon ] ; then
-		${prefix}/sbin/minisvc --rmsvc=${servicedir}/lcd-daemon
-	fi
     ;;
 
     failed-upgrade)
@@ -46,3 +43,7 @@ esac
 if [ " $1" = " upgrade" -o " $1" = " deconfigure" ] ; then
 	exit 0
 fi
+if [ -x ${prefix}/sbin/minisvc -a -d ${servicedir}/lcd-daemon ] ; then
+	${prefix}/sbin/minisvc --rmsvc=${servicedir}/lcd-daemon
+fi
+rm -fr /var/log/svc/lcd-daemon

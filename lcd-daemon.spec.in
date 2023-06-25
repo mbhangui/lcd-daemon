@@ -112,7 +112,7 @@ fi
 %{_prefix}/sbin/minisvc --servicedir=%{servicedir} --service-name=lcd-daemon \
   --export-variables=%{servicedir}/lcd-daemon/variables/.variables --force --silent
 if [ -x /usr/bin/svps ] ; then
-  /usr/bin/svps -h
+  /usr/bin/svps -h >/dev/null 2>&1
 fi
 
 %preun

@@ -111,6 +111,6 @@ fi
 create_lcd_service
 ${rm} -f ${servicedir}/lcd-daemon/down
 if [ -x /usr/bin/svps ] ; then
-	svps -h
+	svps -h >/dev/null 2>&1
 fi
 exit 0

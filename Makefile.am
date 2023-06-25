@@ -21,6 +21,9 @@ edit = sed \
 	-e 's}@VERSION\@}$(VERSION)}g' \
 	-e 's}@prefix\@}$(prefix)}g'
 
+BUILT_SOURCES = select.h
+MOSTLYCLEANFILES = select.h
+
 lcdbindir=@prefix@/bin
 lcdsbindir=@prefix@/sbin
 lcdbin_PROGRAMS = pilcd
@@ -28,20 +31,21 @@ lcdsbin_PROGRAMS = lcdDaemon
 noinst_DATA = lcd-daemon.spec
 man_MANS=pilcd.1 lcdDaemon.8
 lcdlibexecdir=@libexecdir@/lcd-daemon
-lcdlibexec_SCRIPTS=create_service recvlcd
+lcdlibexec_SCRIPTS=create_service
 
 lcdDaemon_SOURCES = lcdDaemon.c
 lcdDaemon_DEPENDENCIES = getln.lo getln2.lo scan_ulong.lo stralloc_catb.lo \
 	stralloc_eady.lo subprintf.lo error_str.lo error.lo substdo.lo str_chr.lo \
 	byte_chr.lo byte_copy.lo str_len.lo alloc.lo alloc_re.lo stralloc_opyb.lo \
 	stralloc_opys.lo substdi.lo byte_cr.lo stralloc_pend.lo getEnvConfig.lo \
-	envread.lo scan_8long.lo str_diffn.lo str_rchr.lo
+	envread.lo scan_8long.lo str_diffn.lo str_rchr.lo substdio.lo \
+	timeoutread.lo ndelay.lo
 lcdDaemon_LDADD = getln.lo getln2.lo scan_ulong.lo stralloc_catb.lo stralloc_eady.lo \
 	error_str.lo error.lo substdo.lo str_chr.lo subprintf.lo byte_chr.lo byte_copy.lo \
 	str_len.lo alloc.lo alloc_re.lo stralloc_pend.lo substdi.lo stralloc_opyb.lo \
 	stralloc_opys.lo byte_cr.lo getEnvConfig.lo envread.lo scan_8long.lo \
-	str_diffn.lo str_rchr.lo $(LIB_WIRINGPI) $(LIB_WIRINGPIDEV) \
-	-lpthread -lrt -lm -lcrypt
+	timeoutread.lo str_diffn.lo str_rchr.lo substdio.lo ndelay.lo \
+	$(LIB_WIRINGPI) $(LIB_WIRINGPIDEV) -lpthread -lrt -lm -lcrypt
 
 pilcd_SOURCES = pilcd.c
 pilcd_LDADD = substdio.lo substdo.lo str_len.lo lcdPrint.lo error_str.lo error.lo \
@@ -50,6 +54,13 @@ pilcd_LDADD = substdio.lo substdo.lo str_len.lo lcdPrint.lo error_str.lo error.l
 pilcd_DEPENDENCIES = substdio.lo substdo.lo str_len.lo lcdPrint.lo error_str.lo error.lo \
 	byte_copy.lo subprintf.lo getEnvConfig.lo envread.lo scan_8long.lo scan_ulong.lo str_diffn.lo \
 	stralloc_catb.lo stralloc_eady.lo stralloc_opyb.lo stralloc_pend.lo alloc.lo alloc_re.lo
+
+select.h: trysysel.c select.h1 select.h2
+	( $(COMPILE) -c trysysel.c >/dev/null 2>&1 \
+	&& cat select.h2 || cat select.h1 ) > select.h
+	rm -f trysysel.o trysysel
+
+timeoutread.lo: select.h
 
 lcd-daemon.spec: lcd-daemon.spec.in catChangeLog doc/ChangeLog conf-version \
 conf-release conf-email

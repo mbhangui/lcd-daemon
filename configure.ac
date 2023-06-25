@@ -1,5 +1,8 @@
 #
 # $Log: configure.ac,v $
+# Revision 1.4  2023-06-24 22:36:18+05:30  Cprogrammer
+# updated AC_CHECK_HEADERS
+#
 # Revision 1.3  2023-06-23 12:29:48+05:30  Cprogrammer
 # fixed support address
 #
@@ -10,7 +13,7 @@
 # Initial revision
 #
 #
-# $Id: configure.ac,v 1.3 2023-06-23 12:29:48+05:30 Cprogrammer Exp mbhangui $
+# $Id: configure.ac,v 1.4 2023-06-24 22:36:18+05:30 Cprogrammer Exp mbhangui $
 #
 AC_PREREQ([2.64])
 AC_INIT([lcd-daemon],[m4_normalize(m4_include(conf-version))],[m4_normalize(m4_include(conf-email))],[lcd-daemon],[https://github.com/mbhangui/lcd-daemon])
@@ -38,7 +41,9 @@ AC_PROG_MAKE_SET
 dnl Checks for header files.
 CPPFLAGS="$CPPFLAGS -I/usr/include/wiringPi -I/usr/include/wiringPiDev"
 dnl AC_ISC_POSIX
-AC_CHECK_HEADERS(ctype.h errno.h stdarg.h unistd.h fcntl.h signal.h inttypes.h sys/types.h sys/wait.h sys/file.h wiringPi.h lcd.h)
+AC_CHECK_HEADERS(ctype.h errno.h stdarg.h unistd.h fcntl.h signal.h inttypes.h)
+AC_CHECK_HEADERS(sys/types.h sys/wait.h sys/file.h sys/socket.h netinet/in.h)
+AC_CHECK_HEADERS(wiringPi.h lcd.h)
 
 AC_CHECK_LIB(wiringPi,    millis,    [AC_SUBST([LIB_WIRINGPI],   ["-lwiringPi"])    AC_DEFINE([HAVE_WIRINGPI],    [1],[WiringPi Library])],,-lwiringPi)
 AC_CHECK_LIB(wiringPiDev, lcdPrintf, [AC_SUBST([LIB_WIRINGPIDEV],["-lwiringPiDev"]) AC_DEFINE([HAVE_WIRINGPIDEV], [1],[WiringPiDev Library])],,-lwiringPiDev)
