@@ -1,23 +1,10 @@
 /*
  * $Log: str_rchr.c,v $
- * Revision 1.7  2022-01-30 19:36:34+05:30  Cprogrammer
- * fixed compiler warning
+ * Revision 1.1  2023-06-24 23:09:47+05:30  Cprogrammer
+ * Initial revision
  *
- * Revision 1.6  2021-07-15 09:54:32+05:30  Cprogrammer
- * use const char * for str
  *
- * Revision 1.5  2021-06-10 10:50:36+05:30  Cprogrammer
- * fixed compiler warning
- *
- * Revision 1.4  2020-11-22 23:53:50+05:30  Cprogrammer
- * use const keyword
- *
- * Revision 1.3  2004-10-22 20:31:00+05:30  Cprogrammer
- * added RCS id
- *
- * Revision 1.2  2004-07-17 21:24:23+05:30  Cprogrammer
- * added RCS log
- *
+ * $Id: str_rchr.c,v 1.1 2023-06-24 23:09:47+05:30 Cprogrammer Exp mbhangui $
  */
 #include "str.h"
 
@@ -61,7 +48,7 @@ str_rchr(register char *s, int c)
 void
 getversion_str_rchr_c()
 {
-	static char    *x = "$Id: str_rchr.c,v 1.7 2022-01-30 19:36:34+05:30 Cprogrammer Exp mbhangui $";
+	static char    *x = "$Id: str_rchr.c,v 1.1 2023-06-24 23:09:47+05:30 Cprogrammer Exp mbhangui $";
 
 	x++;
 }

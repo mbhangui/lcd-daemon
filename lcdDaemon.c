@@ -1,35 +1,9 @@
 /*
- * $Log: lcdDaemon.c,v $
- * Revision 1.9  2023-06-23 17:43:22+05:30  Cprogrammer
- * interchanged rownum and scroll fields
- * prevent row number to be greater than rows supported by LCD
- *
- * Revision 1.8  2023-06-23 12:30:09+05:30  Cprogrammer
- * added startup, shutdown message
- *
- * Revision 1.7  2023-06-22 23:39:36+05:30  Cprogrammer
- * refactored code
- *
- * Revision 1.6  2014-09-03 13:12:25+05:30  Cprogrammer
- * BUG. Mode was not specified for O_CREAT
- *
- * Revision 1.5  2014-09-03 10:53:16+05:30  Cprogrammer
- * flush stdout when wiringPi is not available
- *
- * Revision 1.4  2014-09-02 22:12:57+05:30  Cprogrammer
- * use flock() to allow simultaneous scrolling of multiple rows
- *
- * Revision 1.2  2014-09-02 00:18:10+05:30  Cprogrammer
- * fix for missing wiringPiDev lib
- *
- * Revision 1.1  2014-09-01 20:03:14+05:30  Cprogrammer
- * Initial revision
- *
+ * $Id: lcdDaemon.c,v 1.10 2023-06-25 09:38:11+05:30 Cprogrammer Exp mbhangui $
  */
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
-
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #endif
@@ -48,6 +22,9 @@
 #ifdef HAVE_SYS_TYPES_H
 #include <sys/types.h>
 #endif
+#ifdef HAVE_INTTYPES_H
+#include <inttypes.h>
+#endif
 #ifdef HAVE_SYS_STAT_H
 #include <sys/stat.h>
 #endif
@@ -59,9 +36,16 @@
 #include <sys/file.h>
 #endif
 #endif
-#ifdef HAVE_INTTYPES_H
-#include <inttypes.h>
+#ifdef HAVE_SYS_SOCKET_H
+#include <sys/socket.h>
 #endif
+#ifdef HAVE_NETINET_IN_H
+#include <netinet/in.h>
+#endif
+#ifndef EAFNOSUPPORT
+#define EAFNOSUPPORT EINVAL
+#endif
+
 #if HAVE_WIRINGPI_H
 #include <wiringPi.h>
 #endif
@@ -78,8 +62,10 @@
 #include "getln.h"
 #include "error.h"
 #include "str.h"
+#include "timeoutread.h"
+#include "ndelay.h"
 
-/*
+/*-
 LCD_PIN WIRINGPI_PIN RPI BOARD_PIN  LCD Pin Number */
                      /*             01 Ground */
                      /*             02 +5v */
@@ -105,16 +91,25 @@ LCD_PIN WIRINGPI_PIN RPI BOARD_PIN  LCD Pin Number */
 #define lcdPosition(h, col, row) {printf("\033[%d;%dH", (row), (col)); fflush(stdout);}
 #define lcdClear(h)              {printf("\033[2J\033[H"); fflush(stdout);}
 #endif
+#define PORT 1806
+typedef enum {
+	fifo,
+	sock,
+} req_type;
+
 
 static char     ssoutbuf[512], sserrbuf[512];
 static substdio ssout = SUBSTDIO_FDBUF(write, 1, ssoutbuf, sizeof ssoutbuf);
 static substdio sserr = SUBSTDIO_FDBUF(write, 2, sserrbuf, sizeof(sserrbuf));
-static char     ssinbuf[512];
-static substdio ssin = SUBSTDIO_FDBUF(read, 0, ssinbuf, sizeof ssinbuf);
 static int      childpid[4] = {-1,-1,-1,-1};
-static int      lcd = -1, rows, cols, verbose;
+static int      lcd = -1, rows, cols, verbose, read_timeout = -1, port = -1;
 static stralloc _dirbuf = { 0 };
 static char     *startup_msg, *shutdown_msg;
+#ifdef HAVE_WIRINGPIDEV
+static long     pin_rs, pin_en, pin_d0, pin_d1, pin_d2, pin_d3,
+				pin_d4, pin_d5, pin_d6, pin_d7;
+#endif
+req_type        fdtype;
 
 int             lockfile(int, int);
 
@@ -195,7 +190,7 @@ die2()
 
 #ifndef HAVE_WIRINGPI
 static uint64_t epochMilli, epochMicro ;
-/*
+/*-
  * initialiseEpoch:
  * Initialise our start-of-time variable to be the current unix
  * time in milliseconds and microseconds.
@@ -210,7 +205,7 @@ initialiseEpoch (void)
   epochMicro = (uint64_t)ts.tv_sec * (uint64_t)1000000 + (uint64_t)(ts.tv_nsec /    1000L) ;
 }
 
-/*
+/*-
  * millis:
  * Return a number of milliseconds as an unsigned int.
  * Wraps at 49 days.
@@ -361,15 +356,15 @@ void
 usage()
 {
 	if (subprintf(&sserr, "USAGE: lcdDaemon [-v] [-f fifo_path] [-m fifo_mode] [-d scroll_delay]\n") == -1 ||
-			subprintf(&sserr, "         -b bits -c cols -r rows\n") == -1)
+			subprintf(&sserr, "         -b bits -c cols -r rows -t readtimeout -p port\n") == -1)
 		_exit (111);
 	flush(2);
 	_exit(100);
 }
 
 int
-get_options(int argc, char **argv, char **fifo_path,
-		unsigned long *fifo_mode, int *bits, int *cols, int *rows, int *delay)
+get_options(int argc, char **argv, char **fifo_path, unsigned long *fifo_mode,
+		int *bits, int *cols, int *rows, int *delay)
 {
 	int             c;
 	char            *ptr;
@@ -378,7 +373,8 @@ get_options(int argc, char **argv, char **fifo_path,
 	*fifo_path = (char *) 0;
 	*fifo_mode = -1;
 	*bits = *rows = *cols = *delay = -1;
-	while ((c = getopt(argc, argv, "vf:m:c:r:b:d:i:s:u:")) != -1) {
+	read_timeout = port = -1;
+	while ((c = getopt(argc, argv, "vf:m:c:r:b:d:i:s:u:t:p:")) != -1) {
 		switch (c)
 		{
 		case 'v':
@@ -407,6 +403,12 @@ get_options(int argc, char **argv, char **fifo_path,
 			break;
 		case 'd':
 			scan_int(optarg, delay);
+			break;
+		case 't':
+			scan_int(optarg, &read_timeout);
+			break;
+		case 'p':
+			scan_int(optarg, &port);
 			break;
 		default:
 			usage();
@@ -472,6 +474,18 @@ get_options(int argc, char **argv, char **fifo_path,
 		else
 			*delay = 200;
 	}
+	if (read_timeout == -1) {
+		if ((ptr = env_get("DATA_TIMEOUT")))
+			scan_int(ptr, &read_timeout);
+		else
+			read_timeout = 300;
+	}
+	if (port == -1) {
+		if ((ptr = env_get("PORT")))
+			scan_int(ptr, &port);
+		else
+			port = PORT;
+	}
 	return (0);
 }
 
@@ -507,102 +521,42 @@ lcd_initialize(int bits, int cols, int row, int rs, int en,
 }
 #endif
 
-int
-main(int argc, char **argv)
+ssize_t
+saferead(int fd, char *buf, int len)
 {
-	int             i, bits, rpos, scroll = 0, clear, fd,
-					lockfd, match, delay;
-	stralloc        line = {0};
-	unsigned long   fifo_mode;
-	char           *message, *ptr, *fifo_path;
-#ifdef HAVE_WIRINGPIDEV
-	long            pin_rs, pin_en, pin_d0, pin_d1, pin_d2, pin_d3,
-					pin_d4, pin_d5, pin_d6, pin_d7;
-#endif
+	int             r;
 
-	if (get_options(argc, argv, &fifo_path, &fifo_mode, &bits, &cols, &rows, &delay))
-		return 1;
-	i = str_rchr(fifo_path, '/');
-	if (fifo_path[i]) {
-		if (!stralloc_copyb(&_dirbuf, fifo_path, i) ||
-				!stralloc_0(&_dirbuf))
-			die_nomem();
-		if (access(_dirbuf.s, F_OK) && r_mkdir(_dirbuf.s, 0755))
-			_exit(111);
-		/*- restore _dirbuf */
-		if (!stralloc_copyb(&_dirbuf, fifo_path, i) ||
-				!stralloc_0(&_dirbuf))
-			die_nomem();
-		if (chdir(_dirbuf.s) == -1) {
-			if (subprintf(&sserr, "chdir: %s: %s\n", _dirbuf.s, error_str(errno)) == -1)
-				_exit (111);
+	if ((r = (fdtype == sock ? timeoutread_sock : timeoutread_fifo)(read_timeout, fd, buf, len)) == -1) {
+		if (errno == error_timeout)
+			return 0;
+	} else
+	if (r <= 0) {
+		if (r) {
+			if (subprintf(&sserr, "read: %s\n", error_str(errno)) == -1)
+				_exit(111);
+			flush(2);
 			_exit(111);
 		}
 	}
-	if (access(fifo_path, F_OK) && mkfifo(fifo_path, 0666)) {
-		if (subprintf(&sserr, "mkfifo: %s: %s\n", fifo_path, error_str(errno)) == -1)
-			_exit (111);
-		flush(2);
-		return (1);
-	}
-	if (chmod(fifo_path, (mode_t) fifo_mode)) {
-		if (subprintf(&sserr, "chmod: %o %s: %s\n", get_octal((mode_t) fifo_mode), fifo_path, error_str(errno)) == -1)
-			_exit (111);
-		flush(2);
-		_exit (111);
-	}
-	close(0);
-	if ((fd = open(fifo_path, O_RDWR)) == -1) {
-		if (subprintf(&sserr, "open: %s: %s\n", fifo_path, error_str(errno)) == -1)
-			_exit (111);
-		flush(2);
-		_exit (111);
-	}
-#ifdef HAVE_WIRINGPI
-	if (wiringPiSetup() == -1) {
-		if (subprintf(&sserr, "wiringPiSetup: %s\n", error_str(errno)) == -1)
-			_exit (111);
-		flush(2);
-		return (1);
-	}
-#else
-	initialiseEpoch();
-#endif
-	(void) signal(SIGTERM, (void (*)()) SigTerm);
-	(void) signal(SIGCHLD, (void (*)()) SigChild);
-#ifdef HAVE_WIRINGPIDEV
-	getEnvConfigInt(&pin_rs, "PIN_RS", PIN_RS);
-	getEnvConfigInt(&pin_en, "PIN_EN", PIN_EN);
-	getEnvConfigInt(&pin_d0, "PIN_D0", PIN_D0);
-	getEnvConfigInt(&pin_d1, "PIN_D1", PIN_D1);
-	getEnvConfigInt(&pin_d2, "PIN_D2", PIN_D2);
-	getEnvConfigInt(&pin_d3, "PIN_D3", PIN_D3);
-	getEnvConfigInt(&pin_d4, "PIN_D4", PIN_D4);
-	getEnvConfigInt(&pin_d5, "PIN_D5", PIN_D5);
-	getEnvConfigInt(&pin_d6, "PIN_D6", PIN_D6);
-	getEnvConfigInt(&pin_d7, "PIN_D7", PIN_D7);
-#endif
-#ifdef HAVE_WIRINGPIDEV
-	lcd = lcd_initialize(bits, cols, rows, pin_rs, pin_en,
-			pin_d0, pin_d1, pin_d2, pin_d3, pin_d4, pin_d5, pin_d6, pin_d7);
-	if (lcd < 0)
-		_exit(111);
-#else
-	lcd = 0;
-#endif
-	if (startup_msg && lcd != -1) {
-		lcdClear(lcd);
-		lockfd = lockfile(1, 0);
-		lcdPosition(lcd, 0, 0);
-		lcdPrintf(lcd, "%-*s", cols, startup_msg);
-		lockfile(0, lockfd);
-	}
+	return r;
+}
+
+int
+read_data(int fd, int bits, int cols, int rows, int delay)
+{
+	static char     ssinbuf[512];
+	substdio        ssin;
+	stralloc        line = {0};
+	int             i, lockfd, match, scroll = 0, clear, rpos;
+	char           *ptr, *message;
+
+	substdio_fdbuf(&ssin, saferead, fd, ssinbuf, sizeof ssinbuf);
 	for (;;) {
 		if (getln(&ssin, &line, &match, '\n') == -1) {
 			if (subprintf(&sserr, "getln: %s\n", error_str(errno)) == -1)
 				_exit (111);
 			flush(2);
-			_exit (1);
+			_exit (111);
 		}
 		if (!match && line.len == 0)
 			break;
@@ -630,14 +584,14 @@ main(int argc, char **argv)
 		if (!*ptr)
 			continue;
 		scan_int(ptr, &clear);
-		/*
-		 * clear == 1 - clear lcd screen
-		 * clear == 2 - clear and initialize lcd screen
-		 * clear == 3 - initialize lcd screen
-		 * clear == 4 - clear lcd screen
-		 * clear == 5 - clear and initialize screen
-		 * clear == 6 - initialize screen
-		 */
+		/*-
+	 	* clear == 1 - clear lcd screen
+	 	* clear == 2 - clear and initialize lcd screen
+	 	* clear == 3 - initialize lcd screen
+	 	* clear == 4 - clear lcd screen
+	 	* clear == 5 - clear and initialize screen
+	 	* clear == 6 - initialize screen
+	 	*/
 #ifdef HAVE_WIRINGPIDEV
 		if (clear == 2 || clear == 3 || clear == 5 || clear == 6) {
 			lcd = lcd_initialize(bits, cols, rows, pin_rs, pin_en,
@@ -654,7 +608,7 @@ main(int argc, char **argv)
 		flush(1);
 		if (rpos >= rows) {
 			subprintf(&sserr, "rownum cannot be greater than %d\n", rows - 1);
-			continue;
+			return 1;
 		}
 		if (clear == 1 || clear == 2 || clear == 4 || clear == 5)
 			lcdClear(lcd);
@@ -723,6 +677,205 @@ main(int argc, char **argv)
 				break;
 			} /* switch ((childpid[rpos] = fork())) */
 		} /*- scroll */
-	} /* for (;;) */
+	}
 	return (0);
 }
+
+int
+initialize_socket()
+{
+	int             s, i, ipv6 = 1;
+	struct sockaddr_in6 in6 = {0};
+	struct sockaddr_in  in4 = {0};
+
+	if ((s = socket(AF_INET6, SOCK_DGRAM, IPPROTO_UDP)) == -1) {
+		if (errno == EINVAL || errno == EAFNOSUPPORT) {
+			ipv6 = 0;
+			if ((s = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP)) == -1) {
+				if (subprintf(&sserr, "socket: AF_INET: SOCK_DGRAM: %s\n", error_str(errno)) == -1)
+					_exit(111);
+				flush(2);
+				_exit(111);
+			}
+		} else {
+			if (subprintf(&sserr, "socket: PF_INET6: SOCK_DGRAM: %s\n", error_str(errno)) == -1)
+				_exit(111);
+			flush(2);
+			_exit(111);
+		}
+	}
+	if (ndelay_on(s) == -1) {
+		if (subprintf(&sserr, "ndelay: %s\n", error_str(errno)) == -1)
+			_exit(111);
+		_exit(111);
+	}
+	if (ipv6) {
+		in6.sin6_family = AF_INET6;
+		in6.sin6_addr = in6addr_any;
+		in6.sin6_port = htons(port);
+	} else {
+		in4.sin_family = AF_INET;
+		in4.sin_addr.s_addr = INADDR_ANY;
+		in4.sin_port = htons(port);
+	}
+	setsockopt(s, SOL_SOCKET, SO_REUSEADDR, &i, sizeof(i));
+	if (bind(s, ipv6 ? (struct sockaddr *) &in6 : (struct sockaddr *) &in4,
+				ipv6 ? sizeof(in6) : sizeof(in4)) < 0 ) {
+		if (subprintf(&sserr, "bind: %s\n", error_str(errno)) == -1)
+			_exit(111);
+		flush(2);
+		_exit(111);
+	}
+	return s;
+}
+
+int
+main(int argc, char **argv)
+{
+	int             i, bits, fifofd, sockfd, lockfd, delay;
+	unsigned long   fifo_mode;
+	char           *fifo_path;
+	fd_set          rfds;	/*- File descriptor mask for select -*/
+
+	if (get_options(argc, argv, &fifo_path, &fifo_mode, &bits, &cols, &rows, &delay))
+		return 1;
+	i = str_rchr(fifo_path, '/');
+	if (fifo_path[i]) {
+		if (!stralloc_copyb(&_dirbuf, fifo_path, i) ||
+				!stralloc_0(&_dirbuf))
+			die_nomem();
+		if (access(_dirbuf.s, F_OK) && r_mkdir(_dirbuf.s, 0755))
+			_exit(111);
+		/*- restore _dirbuf which was modified by r_mkdir() */
+		if (!stralloc_copyb(&_dirbuf, fifo_path, i) ||
+				!stralloc_0(&_dirbuf))
+			die_nomem();
+		if (chdir(_dirbuf.s) == -1) {
+			if (subprintf(&sserr, "chdir: %s: %s\n", _dirbuf.s, error_str(errno)) == -1)
+				_exit (111);
+			_exit(111);
+		}
+	}
+	if (access(fifo_path, F_OK) && mkfifo(fifo_path, 0666)) {
+		if (subprintf(&sserr, "mkfifo: %s: %s\n", fifo_path, error_str(errno)) == -1)
+			_exit (111);
+		flush(2);
+		return (1);
+	}
+	if (chmod(fifo_path, (mode_t) fifo_mode)) {
+		if (subprintf(&sserr, "chmod: %o %s: %s\n", get_octal((mode_t) fifo_mode), fifo_path, error_str(errno)) == -1)
+			_exit (111);
+		flush(2);
+		_exit (111);
+	}
+	if ((fifofd = open(fifo_path, O_RDWR)) == -1) {
+		if (subprintf(&sserr, "open: %s: %s\n", fifo_path, error_str(errno)) == -1)
+			_exit (111);
+		flush(2);
+		_exit (111);
+	}
+	if (ndelay_on(fifofd) == -1) {
+		if (subprintf(&sserr, "ndelay-fifo: %s\n", error_str(errno)) == -1)
+			_exit(111);
+		_exit (111);
+	}
+#ifdef HAVE_WIRINGPI
+	if (wiringPiSetup() == -1) {
+		if (subprintf(&sserr, "wiringPiSetup: %s\n", error_str(errno)) == -1)
+			_exit (111);
+		flush(2);
+		return (1);
+	}
+#else
+	initialiseEpoch();
+#endif
+	(void) signal(SIGTERM, (void (*)()) SigTerm);
+	(void) signal(SIGCHLD, (void (*)()) SigChild);
+#ifdef HAVE_WIRINGPIDEV
+	getEnvConfigInt(&pin_rs, "PIN_RS", PIN_RS);
+	getEnvConfigInt(&pin_en, "PIN_EN", PIN_EN);
+	getEnvConfigInt(&pin_d0, "PIN_D0", PIN_D0);
+	getEnvConfigInt(&pin_d1, "PIN_D1", PIN_D1);
+	getEnvConfigInt(&pin_d2, "PIN_D2", PIN_D2);
+	getEnvConfigInt(&pin_d3, "PIN_D3", PIN_D3);
+	getEnvConfigInt(&pin_d4, "PIN_D4", PIN_D4);
+	getEnvConfigInt(&pin_d5, "PIN_D5", PIN_D5);
+	getEnvConfigInt(&pin_d6, "PIN_D6", PIN_D6);
+	getEnvConfigInt(&pin_d7, "PIN_D7", PIN_D7);
+#endif
+#ifdef HAVE_WIRINGPIDEV
+	lcd = lcd_initialize(bits, cols, rows, pin_rs, pin_en,
+			pin_d0, pin_d1, pin_d2, pin_d3, pin_d4, pin_d5, pin_d6, pin_d7);
+	if (lcd < 0)
+		_exit(111);
+#else
+	lcd = 0;
+#endif
+	if ((sockfd = initialize_socket()) == -1) {
+		_exit(111);
+	}
+	if (startup_msg && lcd != -1) {
+		lcdClear(lcd);
+		lockfd = lockfile(1, 0);
+		lcdPosition(lcd, 0, 0);
+		lcdPrintf(lcd, "%-*s", cols, startup_msg);
+		lockfile(0, lockfd);
+	}
+	for (;;) {
+		FD_ZERO(&rfds);
+		FD_SET(fifofd, &rfds);
+		FD_SET(sockfd, &rfds);
+		if ((i = select(sockfd + 1, &rfds, (fd_set *) NULL, (fd_set *) NULL, NULL)) < 0) {
+#ifdef ERESTART
+			if (errno == EINTR || errno == ERESTART)
+#else
+			if (errno == EINTR)
+#endif
+				continue;
+			if (subprintf(&sserr, "select: %s\n", error_str(errno)) == -1)
+				_exit(111);
+			_exit(111);
+		}
+		if (FD_ISSET(fifofd, &rfds)) {
+			fdtype = fifo;
+			read_data(fifofd, bits, cols, rows, delay);
+		}
+		if (FD_ISSET(sockfd, &rfds)) {
+			fdtype = sock;
+			read_data(sockfd, bits, cols, rows, delay);
+		}
+	} /*- for(;;) */
+	return 0;
+}
+
+/*
+ * $Log: lcdDaemon.c,v $
+ * Revision 1.10  2023-06-25 09:38:11+05:30  Cprogrammer
+ * added udp listener
+ *
+ * Revision 1.9  2023-06-23 17:43:22+05:30  Cprogrammer
+ * interchanged rownum and scroll fields
+ * prevent row number to be greater than rows supported by LCD
+ *
+ * Revision 1.8  2023-06-23 12:30:09+05:30  Cprogrammer
+ * added startup, shutdown message
+ *
+ * Revision 1.7  2023-06-22 23:39:36+05:30  Cprogrammer
+ * refactored code
+ *
+ * Revision 1.6  2014-09-03 13:12:25+05:30  Cprogrammer
+ * BUG. Mode was not specified for O_CREAT
+ *
+ * Revision 1.5  2014-09-03 10:53:16+05:30  Cprogrammer
+ * flush stdout when wiringPi is not available
+ *
+ * Revision 1.4  2014-09-02 22:12:57+05:30  Cprogrammer
+ * use flock() to allow simultaneous scrolling of multiple rows
+ *
+ * Revision 1.2  2014-09-02 00:18:10+05:30  Cprogrammer
+ * fix for missing wiringPiDev lib
+ *
+ * Revision 1.1  2014-09-01 20:03:14+05:30  Cprogrammer
+ * Initial revision
+ *
+ */
