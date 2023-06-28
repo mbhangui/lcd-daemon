@@ -18,6 +18,9 @@ rm=/bin/rm
 
 case "$1" in
     install|upgrade)
+	if [ ! -x ${prefix}/sbin/minisvc ] ; then
+		exit 0
+	fi
 	if [ " $1" = " upgrade" ] ; then
 		if [ -d /run ] ; then
 			rundir=/run/svscan

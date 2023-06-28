@@ -7,7 +7,6 @@ Homepage: https://github.com/mbhangui/lcd-daemon
 Build-Depends: debhelper (>= 9), coreutils
 
 Package: lcd-daemon
-Pre-Depends: daemontools
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}
 Description: lcdDaemon is server application that accepts text from clients

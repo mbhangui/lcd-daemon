@@ -34,7 +34,7 @@ BuildRequires: gcc gcc-c++ make autoconf automake libtool
 BuildRequires: glibc glibc-devel
 BuildRequires: libwiringpi-devel libwiringpidev-devel
 Source0: %{name}-%{version}.tar.gz
-Requires: daemontools coreutils
+Requires: coreutils
 
 %description
 lcdDaemon is server application that accepts text from clients  to be
@@ -74,6 +74,9 @@ find %{buildroot}%{_mandir} -type f -exec gzip -q {} \;
 %{_mandir}/man8/lcdDaemon.8.gz
 
 %pretrans
+if [ ! -x %{_prefix}/sbin/minisvc ] ; then
+  exit 0
+fi
 # stop lcd-daemon services before upgrade
 if [ -d /run ] ; then
   rundir=/run/svscan
@@ -92,6 +95,9 @@ fi
 %post
 argv1=$1
 if [ $argv1 -eq 2 ] ; then # upgrade
+  if [ ! -x %{_prefix}/sbin/minisvc ] ; then
+    exit 0
+  fi
   if [ -d /run ] ; then
     rundir=/run/svscan
   elif [ -d /var/run ] ; then
@@ -107,6 +113,10 @@ if [ $argv1 -eq 2 ] ; then # upgrade
   %{__rm} -f ${rundir}/lcd-daemon/.down
   exit 0
 fi
+
+if [ ! -x %{_prefix}/sbin/minisvc ] ; then
+  exit 0
+fi
 # create lcd-daemon service
 %{_libexecdir}/%{name}/create_service --servicedir=%{servicedir}
 %{_prefix}/sbin/minisvc --servicedir=%{servicedir} --service-name=lcd-daemon \
@@ -116,6 +126,9 @@ if [ -x /usr/bin/svps ] ; then
 fi
 
 %preun
+if [ ! -x %{_prefix}/sbin/minisvc ] ; then
+  exit 0
+fi
 if [ -x %{_prefix}/sbin/minisvc ] ; then
   %{_prefix}/sbin/minisvc --rmsvc=%{servicedir}/lcd-daemon
   sleep 5

@@ -1,0 +1,24 @@
+#!/bin/sh
+trap my_exit 2
+
+my_exit()
+{
+echo "1 0 0:$(hostname -I|cut -d ' ' -f1)" | nc -w 1 -u $LCD_HOST $LCD_PORT
+exit 0
+}
+
+LCD_HOST=pi2
+LCD_PORT=1806
+echo "Displaying on LCD Display on $LCD_HOST:$LCD_PORT"
+echo "Press Ctrl-C to quit"
+(
+echo "0 0 3:Load $load"
+echo "1 0 0:$(hostname -I)"
+echo "2 0 0:$(date +"%d-%m-%y %H:%M:%S")"
+echo "3 0 0:$(uname -n)"
+) | nc -w 1 -u $LCD_HOST $LCD_PORT
+while true
+do
+	echo "2 0 0:$(date +"%d-%m-%y %H:%M:%S")" | nc -w 1 -u $LCD_HOST $LCD_PORT
+	sleep 1
+done

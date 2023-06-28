@@ -1,5 +1,5 @@
 /*
- * $Id: lcdDaemon.c,v 1.11 2023-06-25 11:59:23+05:30 Cprogrammer Exp mbhangui $
+ * $Id: lcdDaemon.c,v 1.12 2023-06-27 22:38:57+05:30 Cprogrammer Exp mbhangui $
  */
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -225,7 +225,7 @@ millis (void)
 
 #ifdef HAVE_FLOCK
 int
-lockfile(int type, int lockfd)
+lockfile(int type, int _lockfd)
 {
     int             fd;
 
@@ -243,13 +243,13 @@ lockfile(int type, int lockfd)
 		}
 		return (fd);
 	} else {
-		if (flock(lockfd, LOCK_UN) == -1) {
-			close(lockfd);
+		if (flock(_lockfd, LOCK_UN) == -1) {
+			close(_lockfd);
 			subprintf(&sserr, "%d: flock: LOCK_UN: %s\n", getpid(), error_str(errno));
 			flush(2);
 			_exit (111);
 		}
-		close (lockfd);
+		close (_lockfd);
 		return (0);
 	}
 }
@@ -265,13 +265,6 @@ scrollMessage(int handle, int col, int delay, int width, char *message)
 #endif
 	static int      j, position = 0, start_col;
 
-#if USE_MILLIS
-	if ((i = millis()) < timer)
-		return;
-	timer = millis() + delay ;
-#else
-	usleep(delay * 1000);
-#endif
 	if (!start_col) {
 		start_col = col + 1;
 		j = col;
@@ -298,6 +291,13 @@ scrollMessage(int handle, int col, int delay, int width, char *message)
 			j = width - 1;
 		}
 	}
+#if USE_MILLIS /* this consumes CPU. Have to figure out to make it consume less */
+	if ((i = millis()) < timer)
+		return;
+	timer = millis() + delay ;
+#else
+	usleep(delay * 1000);
+#endif
 }
 
 char *
@@ -852,6 +852,9 @@ main(int argc, char **argv)
 
 /*
  * $Log: lcdDaemon.c,v $
+ * Revision 1.12  2023-06-27 22:38:57+05:30  Cprogrammer
+ * moved sleep to the end of function
+ *
  * Revision 1.11  2023-06-25 11:59:23+05:30  Cprogrammer
  * automatically scroll if length is greater than lcd width
  *

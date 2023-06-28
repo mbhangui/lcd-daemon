@@ -39,6 +39,9 @@ esac
 
 #DEBHELPER#
 
+if [ ! -x ${prefix}/sbin/minisvc ] ; then
+	exit 0
+fi
 # we are doing upgrade
 if [ " $1" = " upgrade" -o " $1" = " deconfigure" ] ; then
 	exit 0
