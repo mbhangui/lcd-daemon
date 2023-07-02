@@ -66,23 +66,23 @@
 #include "ndelay.h"
 
 /*-
-LCD_PIN WIRINGPI_PIN RPI BOARD_PIN  LCD Pin Number */
-                     /*             01 Ground */
-                     /*             02 +5v */
-                     /*             03 Contrast Adjustment */
-#define PIN_RS 6     /*- 22         04 Register Select */
-                     /*             05 Read Write Pin (connected to Ground) */
-#define PIN_EN 5     /*- 18         06 Enable Pulse */
-#define PIN_D0 0     /*-            07 Not connected for 4 bit mode */
-#define PIN_D1 0     /*-            08 Not connected for 4 bit mode*/
-#define PIN_D2 0     /*-            09 Not connected for 4 bit mode*/
-#define PIN_D3 0     /*-            10 Not connected for 4 bit mode*/
-#define PIN_D4 4     /*- 16         11 */
-#define PIN_D5 0     /*- 11         12 */
-#define PIN_D6 2     /*- 13         13 */
-#define PIN_D7 3     /*- 15         14 */
-                     /*             15 Anode of backlight LED */
-                     /*             16 Cathode of backlight LED */
+LCD_PIN WIRINGPI_PIN   GPIO_PIN RPI BOARD_PIN LCD Pin Number */
+                     /*                       01 Ground */
+                     /*                       02 +5v */
+                     /*                       03 Contrast Adjustment */
+#define PIN_RS 6     /* 25      22            04 Register Select */
+                     /*                       05 Read Write Pin (connected to Ground) */
+#define PIN_EN 5     /* 24      18            06 Enable Pulse */
+#define PIN_D0 0     /*                       07 Not connected for 4 bit mode */
+#define PIN_D1 0     /*                       08 Not connected for 4 bit mode*/
+#define PIN_D2 0     /*                       09 Not connected for 4 bit mode*/
+#define PIN_D3 0     /*                       10 Not connected for 4 bit mode*/
+#define PIN_D4 4     /* 23      16            11 */
+#define PIN_D5 0     /* 17      11            12 */
+#define PIN_D6 2     /* 27      13            13 */
+#define PIN_D7 3     /* 22      15            14 */
+                     /*                       15 Anode of backlight LED */
+                     /*                       16 Cathode of backlight LED */
 #ifndef HAVE_WIRINGPIDEV
 #include <stdio.h>
 #include <time.h>

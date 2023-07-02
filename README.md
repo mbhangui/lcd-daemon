@@ -8,24 +8,24 @@ lcd-daemon uses libwiringpi and libwiringpidev from https://github.com/mbhangui/
 
 The wiring scheme used by lcdDaemon is as below. If you wire it differently you don't have to rebuild the package. Instead you can set environment variables PIN\_RS, PIN\_EN, PIN\_D0 to PIN\_D7.
 
-Pin Name|WiringPI Number|RPI Board Number|LCD Pin Number
---------|--------|---------|------------------------------
--|-|6|01 Ground 
--|-|2|02 +5v 
--|-|-|03 Contrast Adjustment 
-PIN\_RS|6|22|04 Register Select 
--|-|-|05 Read Write Pin (connected to Ground)
-PIN\_EN|5|18|06 Enable Pulse
-PIN\_D0|-|-|07 data pin 0 Not connected
-PIN\_D1|-|-|08 data pin 1 Not connected
-PIN\_D2|-|-|09 data pin 2 Not connected
-PIN\_D3|-|-|10 data pin 3 Not connected
-PIN\_D4|4|16|11 data pin 4
-PIN\_D5|0|11|12 data pin 5
-PIN\_D6|2|13|13 data pin 6
-PIN\_D7|3|15|14 data pin 7
--|-|2|15 Anode of backlight LED
--|-|9|16 Cathode of backlight LED
+Pin Name|WiringPI Number|GPIO Pin|RPI Board Number|LCD Pin Number
+--------|---------------|--------|----------------|--------------
+-|-|-|6|01 Ground 
+-|-|-|2|02 +5v 
+-|-|-|-|03 Contrast Adjustment 
+PIN\_RS|6|25|22|04 Register Select 
+-|-|-|-|05 Read Write Pin (connected to Ground)
+PIN\_EN|5|24|18|06 Enable Pulse
+PIN\_D0|-|-|-|07 data pin 0 Not connected
+PIN\_D1|-|-|-|08 data pin 1 Not connected
+PIN\_D2|-|-|-|09 data pin 2 Not connected
+PIN\_D3|-|-|-|10 data pin 3 Not connected
+PIN\_D4|4|23|16|11 data pin 4
+PIN\_D5|0|17|11|12 data pin 5
+PIN\_D6|2|27|13|13 data pin 6
+PIN\_D7|3|22|15|14 data pin 7
+-|-|-|2|15 Anode of backlight LED
+-|-|-|9|16 Cathode of backlight LED
 
 lcdDaemon reads a named pipe and a UDP socket in line mode and expects the line to be in a simple format of arguments, separated by whitespace, as detailed below.
 
