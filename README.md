@@ -27,6 +27,16 @@ PIN\_D7|3|22|15|14 data pin 7
 -|-|-|2|15 Anode of backlight LED
 -|-|-|9|16 Cathode of backlight LED
 
+With the above wiring scheme you may want to have the following lines in <u>/boot/config.txt</u>. This will allow you to access the LCD display using the device <u>/dev/lcd</u>.
+
+```
+# Enable HD44780 LCD controller
+dtoverlay=hd44780-lcd,pin_d4=23,pin_d5=17,pin_d6=27,pin_d7=22
+dtparam=pin_rs=25,pin_en=24,display_height=4,display_width=20
+```
+
+Anything written to this device will get displayed on the LCD display. Clearing the display is as simple as executing `clear > /dev/lcd`. This can be done without having to install the lcd-daemon package. But you can use the lcd-daemon package for having control on which row to print, scroll text and ability to display text on the LCD display from the network.
+
 lcdDaemon reads a named pipe and a UDP socket in line mode and expects the line to be in a simple format of arguments, separated by whitespace, as detailed below.
 
 <u>rownum</u> <u>scroll</u> <u>clear</u>:<u>message</u>
