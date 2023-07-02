@@ -1,5 +1,5 @@
 /*
- * $Id: lcdDaemon.c,v 1.12 2023-06-27 22:38:57+05:30 Cprogrammer Exp mbhangui $
+ * $Id: lcdDaemon.c,v 1.13 2023-07-02 19:38:31+05:30 Cprogrammer Exp mbhangui $
  */
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -852,6 +852,9 @@ main(int argc, char **argv)
 
 /*
  * $Log: lcdDaemon.c,v $
+ * Revision 1.13  2023-07-02 19:38:31+05:30  Cprogrammer
+ * updated comment for GPIO pin numbers
+ *
  * Revision 1.12  2023-06-27 22:38:57+05:30  Cprogrammer
  * moved sleep to the end of function
  *
