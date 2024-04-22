@@ -1,5 +1,8 @@
 /*
  * $Log: str.h,v $
+ * Revision 1.2  2024-04-22 08:02:43+05:30  Cprogrammer
+ * updated prototypes for str_diff, str_diffn, str_len
+ *
  * Revision 1.1  2014-08-20 18:06:29+05:30  Cprogrammer
  * Initial revision
  *
@@ -10,9 +13,9 @@
 
 unsigned int    str_copy(char *, char *);
 unsigned int    str_copyb(char *, char *, unsigned int);
-int             str_diff(char *, char *);
-int             str_diffn(char *, char *, unsigned int);
-unsigned int    str_len(char *);
+int             str_diff(const char *, const char *);
+int             str_diffn(const char *, const char *, unsigned int);
+unsigned int    str_len(const char *);
 unsigned int    str_chr(char *, int);
 unsigned int    str_rchr(char *, int);
 int             str_start(char *, char *);

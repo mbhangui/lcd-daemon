@@ -1,5 +1,8 @@
 /*
  * $Log: stralloc.h,v $
+ * Revision 1.2  2024-04-22 08:00:55+05:30  Cprogrammer
+ * updated prototypes for stralloc_cats, stralloc_catb
+ *
  * Revision 1.1  2014-09-01 20:05:55+05:30  Cprogrammer
  * Initial revision
  *
@@ -18,8 +21,8 @@ int             stralloc_copy(stralloc *, stralloc *);
 int             stralloc_copys(stralloc *, char *);
 int             stralloc_copyb(stralloc *, char *, int);
 int             stralloc_cat(stralloc *, stralloc *);
-int             stralloc_cats(stralloc *, char *);
-int             stralloc_catb(stralloc *, char *, int);
+int             stralloc_cats(stralloc *, const char *);
+int             stralloc_catb(stralloc *, const char *, int);
 int             stralloc_append(stralloc *, char *); /*- beware: this takes a pointer to 1 char */
 int             stralloc_starts(stralloc *, char *);
 int             stralloc_catulong0(stralloc *, unsigned long, unsigned int);

@@ -1,12 +1,12 @@
 .\" vim: tw=75
 .LL 1i
-.TH lcdDaemon 8
+.TH lcd-daemon 8
 .SH NAME
-lcdDaemon \- Daemon for controlling LCD Displays with Hitachi 44780
+lcd-daemon \- Daemon for controlling LCD Displays with Hitachi 44780
 controller
 
 .SH SYNOPSYS
-\fBlcdDaemon\fR [-v] [-f \fIfifo\fR] [-m \fImode\fR]
+\fBlcd-daemon\fR [-v] [-f \fIfifo\fR] [-m \fImode\fR]
 [-b \fIbits\fR] [-c \fIcols\fR] [-r \fIrows\fR]
 .nf
   [-t readtimeout] [-p port]
@@ -14,29 +14,30 @@ controller
 .fi
 
 .SH DESCRIPTION
-\fBlcdDaemon(1)\fR reads a named pipe \fIfifo\fR or listens on a UDP socket
-to read messages from clients to be printed on 20x4 or 16x2 LCD Displays
-with Hitachi 44780 controller. lcdDaemon creates the directory for the
-named pipe if it doesn't exist. The file mode for \fIfifo\fR can be
-provided by \fImode\fR.  \fIcols\fR and \fIrows\fR depends on the LCD
-display connected - either a 20x4 display which has 20 colums and 4 rows or
-a 16x2 display which has 16 columns and 2 rows. You can operate these
-displays in 4 bit mode or 8 bit mode. In 4 bit mode 4 terminals of the LCD
-data pins are connected (pins D4 to D7). In 8 bit mode, all 8 data pins of
-the LCD display are connected (pins D0 to D7).
+\fBlcd-daemon\fR(1) reads a named pipe \fIfifo\fR or listens on a UDP
+socket to read messages from clients to be printed on 20x4 or 16x2 LCD
+Displays with Hitachi 44780 controller. \fBlcd-daemon\fR(8) creates the
+directory for the named pipe \fIfifo\fR, if it doesn't exist. The file mode
+for \fIfifo\fR can be provided by \fImode\fR. \fIcols\fR and \fIrows\fR
+depends on the LCD display connected - either a 20x4 display which has 20
+colums and 4 rows or a 16x2 display which has 16 columns and 2 rows. You
+can operate these displays in 4 bit mode or 8 bit mode. In 4 bit mode 4
+terminals of the LCD data pins are connected (pins D4 to D7). In 8 bit
+mode, all 8 data pins of the LCD display are connected (pins D0 to D7).
 
-\fBlcdDaemon(8)\fR is generally started through supervise(8) using
+\fBlcd-daemon\fR(8) is generally started through supervise(8) using
 /service/lcd-daemon service. You can however use your own method to start
-\fBlcdDaemon(8)\fR. \fBlcdDaemon\fR uses the wiringPi library, which needs
-write access to /dev/mem and /dev/gpiomem and needs to run with uid 0.
+\fBlcd-daemon\fR(8). \fBlcd-daemon\fR(8) uses the wiringPi library, which
+needs write access to /dev/mem and /dev/gpiomem and needs to run with uid 0.
 
-By default, lcdDaemon creates \fIrundir/lcd-daemon/lcdfifo\fR named pipe
-and listens on UDP port \fB1806\fR.
+By default, \fBlcd-daemon\fR(8) creates \fIrundir/lcd-daemon/lcdfifo\fR
+named pipe and listens on UDP port \fB1806\fR.
 
 You can use \fBnc\fR(1) command or any TCP applciation to write a message
 to the UDP port 1806. You can use any any client that writes to the named
-pipe \fIrundir/lcd-daemon/lcdfifo\fR, created by lcdDaemon. \fBpilcd\fR(1)
-is one client that writes to the named pipe created by lcdDaemon.
+pipe \fIrundir/lcd-daemon/lcdfifo\fR, created by \fBlcd-daemon\fR(8).
+\fBpilcd\fR(1) is one client that writes to the named pipe created by
+\fBlcd-daemon\fR(8).
 
 Any client has to write the message by following format below (<sp> stands
 for the white space character).
@@ -93,32 +94,33 @@ This can be used to change the default delay period in milliseconds of
 200ms for scrolling.
 .TP
 \fB\-p\fR \fIport\fR
-UDP port on which lcdDaemon listens. If not provided this is 1806
+UDP port on which \fBlcd-daemon\fR(8) listens. If not provided this is
+\fB1806\fR.
 .TP
 \fB\-t\fR \fIreadtimeout\fR
-No of milliseconds lcdDaemon will read a message from a client before
-timing out. Default is 300 milliseconds.
+No of milliseconds \fBlcd-daemon\fR(8) will read a message from a client
+before timing out. Default is 300 milliseconds.
 .TP
 \fB\-i\fR \fIstartup_msg\fR
-Startup message to be displayed on LCD on lcdDaemon startup
+Startup message to be displayed on LCD on \fBlcd-daemon\fR(8) startup
 .TP
 \fB\-s\fR \fIshutdown_msg\fR
-Shutdown message to be displayed on LCD on lcdDaemon startup
+Shutdown message to be displayed on LCD on \fBlcd-daemon\fR(8) startup
 
 .SH Environment Variables
-\fBlcdDaemon(8)\fR uses the following environment variables.
+\fBlcd-daemon\fR(8) uses the following environment variables.
 
 .TP 13
 LCDFIFO
-If the -f option is not provided, lcdDaemon reads
+If the -f option is not provided, \fBlcd-daemon\fR(8) reads
 \fIrundir/lcd-daemon/lcdfifo\fR, where \fIrundir\fR is /run, /var/run or
 /tmp depending on your system. The fifo can be changed by setting
 \fBLCDFIFO\fR environment variable.
 
 .TP
 FIFO_MODE
-if the -m option is not provided, lcdDaemon sets 0666 as the file mode for
-\fIfifo\fR. The mode can be changed by setting \fBFIFO_MODE\fR
+if the -m option is not provided, \fBlcd-daemon\fR(8) sets 0666 as the file
+mode for \fIfifo\fR. The mode can be changed by setting \fBFIFO_MODE\fR
 environment variable.
 
 .TP
@@ -134,13 +136,14 @@ Delay in milliseconds. Default 200 milliseconds
 .TP
 DATA_TIMEOUT
 If -t is not provided, the env variable \fBDATA_TIMEOUT\fR is used. This is
-timeout in seconds after which lcdDaemon will timeout when reading from the
-named pipe or from the socket. Default is 300 seconds.
+timeout in seconds after which \fBlcd-daemon\fR(8) will timeout when
+reading from the named pipe or from the socket. Default is 300 seconds.
 
 .TP
 PORT
 If -p is not provided, the env variable \fBPORT\fR is used. This is the UDP
-port on which lcdDaemon listens for UDP packets. Default port is 1806.
+port on which \fBlcd-daemon\fR(8) listens for UDP packets. Default port is
+\fB1806\fR.
 
 .TP
 BIT_MODE
@@ -220,4 +223,4 @@ the return value will be 111.
 Manvendra Bhangui <lcd-daemon@indimail.org>
 
 .SH "SEE ALSO"
-supervise(8), svc(8), envdir(8), multilog(8), pilcd(1)
+supervise(8), svc(8), envdir(8), multilog(8), pilcd(1), notify-daemon(8)

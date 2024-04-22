@@ -1,26 +1,17 @@
 /*
  * $Log: str_diffn.c,v $
- * Revision 1.1  2014-08-18 10:22:24+05:30  Cprogrammer
+ * Revision 1.1  2024-04-22 08:02:34+05:30  Cprogrammer
  * Initial revision
- *
  *
  */
 #include "str.h"
 
-#ifndef	lint
-static char     sccsid[] = "$Id: str_diffn.c,v 1.1 2014-08-18 10:22:24+05:30 Cprogrammer Exp mbhangui $";
-#endif
-
 int
-str_diffn(s, t, len)
-	register char  *s;
-	register char  *t;
-	unsigned int    len;
+str_diffn(register const char *s, register const char *t, unsigned int len)
 {
 	register char   x;
 
-	for (;;)
-	{
+	for (;;) {
 		if (!len--)
 			return 0;
 		x = *s;
@@ -59,4 +50,12 @@ str_diffn(s, t, len)
 		++t;
 	}
 	return ((int) (unsigned int) (unsigned char) x) - ((int) (unsigned int) (unsigned char) *t);
+}
+
+void
+getversion_str_diffn_c()
+{
+	static char    *x = "$Id: str_diffn.c,v 1.1 2024-04-22 08:02:34+05:30 Cprogrammer Exp mbhangui $";
+
+	x++;
 }

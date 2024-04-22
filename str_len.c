@@ -1,25 +1,18 @@
 /*
  * $Log: str_len.c,v $
- * Revision 1.1  2014-08-18 10:22:33+05:30  Cprogrammer
+ * Revision 1.1  2024-04-22 08:01:53+05:30  Cprogrammer
  * Initial revision
- *
  *
  */
 #include "str.h"
 
-#ifndef	lint
-static char     sccsid[] = "$Id: str_len.c,v 1.1 2014-08-18 10:22:33+05:30 Cprogrammer Exp mbhangui $";
-#endif
-
 unsigned int
-str_len(s)
-	register char  *s;
+str_len(register const char *s)
 {
-	register char  *t;
+	register const char *t;
 
 	t = s;
-	for (;;)
-	{
+	for (;;) {
 		if (!*t)
 			return t - s;
 		++t;
@@ -33,4 +26,12 @@ str_len(s)
 			return t - s;
 		++t;
 	}
+}
+
+void
+getversion_str_len_c()
+{
+	static char    *x = "$Id: str_len.c,v 1.1 2024-04-22 08:01:53+05:30 Cprogrammer Exp mbhangui $";
+
+	x++;
 }

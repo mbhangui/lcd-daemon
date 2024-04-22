@@ -32,15 +32,22 @@ Group: Applications/Multimedia
 URL: https://github.com/mbhangui/lcd-daemon
 BuildRequires: gcc gcc-c++ make autoconf automake libtool
 BuildRequires: glibc glibc-devel
+# only for raspberry pi distributions
+# TODO: need to find a variable name instead of raspberry_version
+%if 0%{?raspbian_version}
 BuildRequires: libwiringpi-devel libwiringpidev-devel
+%endif
 Source0: %{name}-%{version}.tar.gz
 Requires: coreutils
 
 %description
-lcdDaemon is server application that accepts text from clients  to be
+lcd-daemon is server application that accepts text from clients  to be
 printed on character LCD Display with Hitachi 44780 controller. It uses the
 libwiringPi and libwiringPiDev library at
 https://github.com/mbhangui/wiringPi
+
+notify-daemon is server application that accepts text from clients to be
+sent as desktop notifications
 
 The libraries were originally written by Gordon Henderson. The version of
 libwiringpi used here is an unofficial fork of wiringPi at
@@ -61,17 +68,20 @@ find %{buildroot}%{_mandir} -type f -exec gzip -q {} \;
 
 %files
 %defattr (-,root,root)
-%doc COPYING README
+%doc LICENSE README.md
 %dir %attr(755,root,root) %{_libexecdir}/%{name}
-%{_sbindir}/lcdDaemon
+%{_sbindir}/lcd-daemon
+%{_sbindir}/notify-daemon
 %{_bindir}/pilcd
+%{_bindir}/pinotify
 %{_libexecdir}/%{name}/create_service
-%{_libexecdir}/%{name}/recvlcd
 %ghost /var/log/svc/lcd-daemon
 
 %docdir %{_mandir}
 %{_mandir}/man1/pilcd.1.gz
-%{_mandir}/man8/lcdDaemon.8.gz
+%{_mandir}/man1/pinotify.1.gz
+%{_mandir}/man8/lcd-daemon.8.gz
+%{_mandir}/man8/notify-daemon.8.gz
 
 %pretrans
 if [ ! -x %{_prefix}/sbin/minisvc ] ; then
@@ -105,25 +115,32 @@ if [ $argv1 -eq 2 ] ; then # upgrade
   else
     rundir=%{servicedir}
   fi
-  %{_prefix}/sbin/minisvc --servicedir=%{servicedir} --refreshsvc="%{servicedir}/lcd-daemon" --silent
-  %{_prefix}/bin/svok %{servicedir}/lcd-daemon >/dev/null 2>&1
-  if [ $? -eq 0 -a -f ${rundir}/lcd-daemon/.down ] ; then
-    %{_prefix}/bin/svc -u %{servicedir}/lcd-daemon
-  fi
-  %{__rm} -f ${rundir}/lcd-daemon/.down
+  for j in lcd-daemon notify-desktop
+  do
+    %{_prefix}/sbin/minisvc --servicedir=%{servicedir} --refreshsvc="%{servicedir}/$j" --silent
+    %{_prefix}/bin/svok %{servicedir}/$j >/dev/null 2>&1
+    if [ $? -eq 0 -a -f ${rundir}/$j/.down ] ; then
+      %{_prefix}/bin/svc -u %{servicedir}/$j
+    fi
+    %{__rm} -f ${rundir}/$j/.down
+  done
   exit 0
 fi
 
 if [ ! -x %{_prefix}/sbin/minisvc ] ; then
   exit 0
 fi
-# create lcd-daemon service
-%{_libexecdir}/%{name}/create_service --servicedir=%{servicedir}
-%{_prefix}/sbin/minisvc --servicedir=%{servicedir} --service-name=lcd-daemon \
-  --export-variables=%{servicedir}/lcd-daemon/variables/.variables --force --silent
-if [ -x /usr/bin/svps ] ; then
-  /usr/bin/svps -h >/dev/null 2>&1
-fi
+for j in lcd-daemon notify-desktop
+do
+  # create lcd-daemon, notify-desktop service in down state
+  %{_libexecdir}/%{name}/create_service --servicedir=%{servicedir} --"$j"
+  %{_prefix}/sbin/minisvc --servicedir=%{servicedir} --service-name="$j" \
+    --export-variables=%{servicedir}/"$j"/variables/.variables --force --silent
+  touch %{servicedir}/"$j"/down
+  if [ -x /usr/bin/svps ] ; then
+    /usr/bin/svps -h >/dev/null 2>&1
+  fi
+done
 
 %preun
 if [ ! -x %{_prefix}/sbin/minisvc ] ; then
@@ -131,6 +148,7 @@ if [ ! -x %{_prefix}/sbin/minisvc ] ; then
 fi
 if [ -x %{_prefix}/sbin/minisvc ] ; then
   %{_prefix}/sbin/minisvc --rmsvc=%{servicedir}/lcd-daemon
+  %{_prefix}/sbin/minisvc --rmsvc=%{servicedir}/notify-desktop
   sleep 5
 fi
 

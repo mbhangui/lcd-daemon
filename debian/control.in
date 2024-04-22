@@ -11,8 +11,11 @@ Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}
 Description: lcdDaemon is server application that accepts text from clients
  to be printed on character LCD Display with Hitachi 44780 controller. It
- uses the libwiringPi and libwiringPiDev library at
+ uses the libwiringPi and libwiringPiDev library located at
  https://github.com/mbhangui/wiringPi
+ .
+ notify-daemon is server application that accepts text from clients to be
+ sent as desktop notifications
  .
  The libraries were originally written by Gordon Henderson. The version of
  libwiringpi used here is an unofficial fork of wiringPi at

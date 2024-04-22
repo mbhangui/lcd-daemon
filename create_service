@@ -1,6 +1,9 @@
 #!/bin/sh
 #
 # $Log: create_service,v $
+# Revision 1.6  2024-04-22 07:58:43+05:30  Cprogrammer
+# add function to create notify-desktop service
+#
 # Revision 1.5  2023-06-23 13:02:15+05:30  Cprogrammer
 # added startup/shutdown message
 #
@@ -17,12 +20,12 @@
 # Initial revision
 #
 #
-# $Id: create_service,v 1.5 2023-06-23 13:02:15+05:30 Cprogrammer Exp mbhangui $
+# $Id: create_service,v 1.6 2024-04-22 07:58:43+05:30 Cprogrammer Exp mbhangui $
 #
 prefix=/usr
 LOGDIR=/var/log/svc
 
-create_lcd_service()
+create_lcd_daemon_service()
 {
 	/bin/mkdir -p "$DESTDIR"$servicedir/lcd-daemon/log
 	if [ $? -ne 0 ] ; then
@@ -35,11 +38,11 @@ create_lcd_service()
 		echo "mkdir $conf_dir failed" 1>&2
 		exit 1
 	fi
-	#lcd-daemon log script
+	# lcd-daemon log script
 	(
 	echo "#!/bin/sh"
 	echo "#"
-	echo "# \$Id: create_service,v 1.5 2023-06-23 13:02:15+05:30 Cprogrammer Exp mbhangui $"
+	echo "# \$Id: create_service,v 1.6 2024-04-22 07:58:43+05:30 Cprogrammer Exp mbhangui $"
 	echo ""
 	echo "exec $prefix/bin/setuidgid qmaill \\"
 	echo "  $prefix/sbin/multilog t $LOGDIR/lcd-daemon"
@@ -59,22 +62,80 @@ create_lcd_service()
 	echo 20   > $conf_dir/LCD_WIDTH
 	echo 4    > $conf_dir/LCD_ROWS
 	echo 1    > $conf_dir/SAVE_CPU
-	echo "/usr/libexec/lcd-daemon/create_service --servicedir=$servicedir" > $conf_dir/.options
+	echo "/usr/libexec/lcd-daemon/create_service --servicedir=$servicedir --lcd-daemon" > $conf_dir/.options
 	(
 	echo "#!/bin/sh"
 	echo "#"
-	echo "# \$Id: create_service,v 1.5 2023-06-23 13:02:15+05:30 Cprogrammer Exp mbhangui $"
+	echo "# \$Id: create_service,v 1.6 2024-04-22 07:58:43+05:30 Cprogrammer Exp mbhangui $"
 	echo "#"
 	echo
 	echo
 	echo "exec ${prefix}/bin/envdir ${servicedir}/lcd-daemon/variables \\"
-	echo "  ${prefix}/sbin/lcdDaemon -i \"Display Initialized\" -s \"Display Turned Off\" 2>&1"
+	echo "  ${prefix}/sbin/lcd-daemon -i \"Display Initialized\" -s \"Display Turned Off\" 2>&1"
 	) > "$DESTDIR"$servicedir/lcd-daemon/run
 	/bin/chmod +x "$DESTDIR"$servicedir/lcd-daemon/run
 
 	if [ ! -d $LOGDIR/lcd-daemon ] ; then
 		/bin/mkdir -p $LOGDIR/lcd-daemon
 		$chown qmaill:nofiles $LOGDIR/lcd-daemon
+	fi
+}
+
+create_notify_desktop_service()
+{
+	/bin/mkdir -p "$DESTDIR"$servicedir/notify-desktop/log
+	if [ $? -ne 0 ] ; then
+		echo "mkdir "$DESTDIR"$servicedir/notify-desktop/log failed" 1>&2
+		exit 1
+	fi
+	conf_dir="$DESTDIR"$servicedir/notify-desktop/variables
+	/bin/mkdir -p $conf_dir
+	if [ $? -ne 0 ] ; then
+		echo "mkdir $conf_dir failed" 1>&2
+		exit 1
+	fi
+	# notify-desktop log script
+	(
+	echo "#!/bin/sh"
+	echo "#"
+	echo "# \$Id: create_service,v 1.6 2024-04-22 07:58:43+05:30 Cprogrammer Exp mbhangui $"
+	echo ""
+	echo "exec $prefix/bin/setuidgid qmaill \\"
+	echo "  $prefix/sbin/multilog t $LOGDIR/notify-desktop"
+	) > "$DESTDIR"$servicedir/notify-desktop/log/run
+	/bin/chmod +x "$DESTDIR"$servicedir/notify-desktop/log/run
+
+	if [ -d /run ] ; then
+		echo "/run/notify-desktop/notify-fifo" > $conf_dir/NOTIFYFIFO
+	elif [ -d /var/run ] ; then
+		echo "/var/run/notify-desktop/notify-fifo" > $conf_dir/NOTIFYFIFO
+	else
+		echo "/tmp/notify-desktop/notify-fifo" > $conf_dir/NOTIFYFIFO
+	fi
+	echo 0666 > $conf_dir/FIFO_MODE
+	echo ":0" > $conf_dir/DISPLAY
+	id="$(id -u pi)"
+	if [ -n "$id" ] ; then
+		echo "/run/user/$id"  > $conf_dir/XDG_RUNTIME_DIR
+	else
+		echo "/run/user/1000" > $conf_dir/XDG_RUNTIME_DIR
+	fi
+	echo "/usr/libexec/lcd-daemon/create_service --servicedir=$servicedir --notify-desktop" > $conf_dir/.options
+	(
+	echo "#!/bin/sh"
+	echo "#"
+	echo "# \$Id: create_service,v 1.6 2024-04-22 07:58:43+05:30 Cprogrammer Exp mbhangui $"
+	echo "#"
+	echo
+	echo
+	echo "exec ${prefix}/bin/envdir ${servicedir}/notify-desktop/variables \\"
+	echo "  ${prefix}/sbin/notify-daemon -i \"Display Initialized\" -s \"Display Turned Off\" 2>&1"
+	) > "$DESTDIR"$servicedir/notify-desktop/run
+	/bin/chmod +x "$DESTDIR"$servicedir/notify-desktop/run
+
+	if [ ! -d $LOGDIR/notify-desktop ] ; then
+		/bin/mkdir -p $LOGDIR/notify-desktop
+		$chown qmaill:nofiles $LOGDIR/notify-desktop
 	fi
 }
 
@@ -126,6 +187,14 @@ while test $# -gt 0; do
 	servicedir=$optarg
 	;;
 
+	--lcd-daemon)
+	option=1
+	;;
+
+	--notify-desktop)
+	option=2
+	;;
+
 	esac
 	shift
 done
@@ -133,4 +202,11 @@ if [ -z "$servicedir" ] ; then
 	echo "servicedir not provided" 1>&2
 	exit 1
 fi
-create_lcd_service
+case $option in
+	1)
+	create_lcd_daemon_service
+	;;
+	2)
+	create_notify_desktop_service
+	;;
+esac

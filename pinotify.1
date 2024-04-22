@@ -1,0 +1,40 @@
+.\" vim: tw=75
+.LL 1i
+.TH pinotify 1
+.SH NAME
+pinotify \- Send desktop notification to notify-daemon
+
+.SH SYNOPSYS
+\fBpinotify\fR \fIsummary\fR \fIbody1\fR \fIbody2\fR ...
+
+.SH DESCRIPTION
+\fBpinotify\fR(1) communicates with \fBnotify-daemon\fR(8) to send desktop
+notifications. It uses a named pipe to send messages to
+\fBnotify-daemon\fR(8). The default named pipe is
+\fIrundir/notify-desktop/notify-fifo\fR which can be changed by setting
+\fBNOTIFYFIFO\fR environment variable. \fIrundir\fR is /run, /var/run or /tmp
+depending on your system.
+
+\fBpinotify\fR(1) uses the following format for the message written to the
+named pipe (here <sp> stands for the white space character)
+
+.EX
+\fIsummary:stext\fR\\n\fIbody1:btext\fR\\n\fIbody2:btext\fR\\n\fBend:\\n"
+.EE
+
+where \fIstext\fR is the summary that will be used for desktop notification
+and \fIbtext\fR is the body text that will be used for desktop
+notification. See the man page for notify-send(1).
+
+
+.SH RETURN VALUE
+0 if all steps were successful, non-zero otherwise. A diagnostic message is
+printed if pinotify encounters any error. If any systerm error is encountered,
+the return value will be 111.
+
+.SH AUTHORS
+Manvendra Bhangui <lcd-daemon@indimail.org>
+
+.SH "SEE ALSO"
+supervise(8), svc(8), envdir(8), multilog(8), pilcd(1), lcd-daemon(8),
+notify-daemon(8)

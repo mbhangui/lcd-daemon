@@ -9,6 +9,7 @@ rm=/bin/rm
 chown=/bin/chown
 logdir=/var/log/svc
 servicedir=/service
+libexecdir=${prefix}/libexec
 
 # summary of how this script can be called:
 #        * <postinst> `configure' <most-recently-configured-version>
@@ -22,57 +23,16 @@ servicedir=/service
 # for details, see http://www.debian.org/doc/debian-policy/ or
 # the debian-policy package
 
-create_lcd_service()
-{
-	/bin/mkdir -p ${servicedir}/lcd-daemon/log
-	conf_dir=${servicedir}/lcd-daemon/variables
-	/bin/mkdir -p $conf_dir
-	echo 200  > $conf_dir/SCROLL_DELAY
-	echo 0666 > $conf_dir/FIFO_MODE
-	echo 4    > $conf_dir/BIT_MODE
-	echo 20   > $conf_dir/LCD_WIDTH
-	echo 4    > $conf_dir/LCD_ROWS
-	echo 1    > $conf_dir/SAVE_CPU
-	echo "/usr/libexec/lcd-daemon/create_service --servicedir=${servicedir}" > $conf_dir/.options
-	#lcd-daemon log script
-	(
-	echo "#!/bin/sh"
-	echo "#"
-	echo "# \$Id: create_service,v 1.1 2014-09-02 22:08:00+05:30 Cprogrammer Exp mbhangui $"
-	echo ""
-	echo "exec ${prefix}/bin/setuidgid qmaill \\"
-	echo "${prefix}/sbin/multilog t ${logdir}/lcd-daemon"
-	) > ${servicedir}/lcd-daemon/log/run
-	/bin/chmod +x ${servicedir}/lcd-daemon/log/run
-
-	(
-	echo "#!/bin/sh"
-	echo "#"
-	echo "# \$Id: create_service,v 1.1 2014-09-02 22:08:00+05:30 Cprogrammer Exp mbhangui $"
-	echo "#"
-	echo
-	echo
-	echo "exec ${prefix}/bin/envdir ${servicedir}/lcd-daemon/variables \\"
-	echo "  ${prefix}/sbin/lcdDaemon -i \"Display Initialized\" -s \"Display Turned Off\" 2>&1"
-	) > ${servicedir}/lcd-daemon/run
-	/bin/chmod +x ${servicedir}/lcd-daemon/run
-
-	if [ ! -d ${logdir}/lcd-daemon ] ; then
-		/bin/mkdir -p ${logdir}/lcd-daemon
-		$chown qmaill:nofiles ${logdir}/lcd-daemon
-	fi
-}
-
 upgrade=0
 case "$1" in
     configure)
-	if [ -n "$2" ] ; then
-		upgrade=1
-	fi
+  if [ -n "$2" ] ; then
+    upgrade=1
+  fi
     ;;
 
     abort-upgrade|abort-remove|abort-deconfigure)
-	exit 0
+  exit 0
     ;;
 
     *)
@@ -86,34 +46,49 @@ esac
 
 #DEBHELPER#
 if [ ! -x ${prefix}/sbin/minisvc ] ; then
-	exit 0
+  exit 0
 fi
 if [ $upgrade -eq 1 ] ; then # upgrade
-	# refresh lcd-daemon services
-	${prefix}/sbin/minisvc --servicedir=${servicedir} --refreshsvc="${servicedir}/lcd-daemon" --silent
-	# start lcd-daemon services after upgrade
-	if [ -d /run ] ; then
-		rundir=/run/svscan
-	elif [ -d /var/run ] ; then
-		rundir=/var/run/svscan
-	else
-		rundir=${servicedir}
-	fi
-	set +e
-	${prefix}/bin/svok ${servicedir}/lcd-daemon >/dev/null 2>&1
-	if [ $? -eq 0 -a -f ${rundir}/lcd-daemon/.down ] ; then
-		${prefix}/bin/svc -u ${servicedir}/lcd-daemon
-	fi
-	rm -f ${rundir}/lcd-daemon/.down
-	set -e
-	${prefix}/sbin/minisvc --servicedir=${servicedir} --service-name=lcd-daemon \
-		--export-variables=${servicedir}/lcd-daemon/variables/.variables --force --silent
-	exit 0
+  # refresh lcd-daemon services
+  for j in lcd-daemon notify-desktop
+  do
+    ${prefix}/sbin/minisvc --servicedir=${servicedir} --refreshsvc="${servicedir}/$j" --silent
+  done
+  # start lcd-daemon, notify-desktop services after upgrade
+  if [ -d /run ] ; then
+    rundir=/run/svscan
+  elif [ -d /var/run ] ; then
+    rundir=/var/run/svscan
+  else
+    rundir=${servicedir}
+  fi
+  set +e
+  for j in lcd-daemon notify-desktop
+  do
+    ${prefix}/bin/svok ${servicedir}/$j >/dev/null 2>&1
+    if [ $? -eq 0 -a -f ${rundir}/$j/.down ] ; then
+      ${prefix}/bin/svc -u ${servicedir}/$j
+    fi
+    rm -f ${rundir}/$j/.down
+  done
+  set -e
+  for j in lcd-daemon notify-desktop
+  do
+    ${prefix}/sbin/minisvc --servicedir=${servicedir} --service-name=$j \
+      --export-variables=${servicedir}/$j/variables/.variables --force --silent
+  done
+  exit 0
 fi
 
-create_lcd_service
-${rm} -f ${servicedir}/lcd-daemon/down
+for j in lcd-daemon notify-desktop
+do
+  # create lcd-daemon, notify-desktop service in down state
+  ${libexecdir}/lcd-daemon/create_service --servicedir=${servicedir} --"$j"
+  ${prefix}/sbin/minisvc --servicedir=${servicedir} --service-name=$j \
+      --export-variables=${servicedir}/$j/variables/.variables --force --silent
+  touch ${servicedir}/$j/down
+done
 if [ -x /usr/bin/svps ] ; then
-	svps -h >/dev/null 2>&1
+  svps -h >/dev/null 2>&1
 fi
 exit 0

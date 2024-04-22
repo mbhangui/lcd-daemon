@@ -57,7 +57,8 @@ Makefile
 config.h
 config.log
 config.status
-lcdDaemon
+lcd-daemon
+notify-daemon
 libtool
 pilcd
 stamp-h1

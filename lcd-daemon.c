@@ -1,5 +1,5 @@
 /*
- * $Id: lcdDaemon.c,v 1.13 2023-07-02 19:38:31+05:30 Cprogrammer Exp mbhangui $
+ * $Id: lcd-daemon.c,v 1.14 2024-04-22 08:03:22+05:30 Cprogrammer Exp mbhangui $
  */
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -374,7 +374,7 @@ get_options(int argc, char **argv, char **fifo_path, unsigned long *fifo_mode,
 	*fifo_mode = -1;
 	*bits = *rows = *cols = *delay = -1;
 	read_timeout = port = -1;
-	while ((c = getopt(argc, argv, "vf:m:c:r:b:d:i:s:u:t:p:")) != -1) {
+	while ((c = getopt(argc, argv, "vf:m:c:r:b:d:i:s:t:p:")) != -1) {
 		switch (c)
 		{
 		case 'v':
@@ -589,8 +589,8 @@ read_data(int fd, int bits, int cols, int rows, int delay)
 	 	* clear == 2 - clear and initialize lcd screen
 	 	* clear == 3 - initialize lcd screen
 	 	* clear == 4 - clear lcd screen
-	 	* clear == 5 - clear and initialize screen
-	 	* clear == 6 - initialize screen
+	 	* clear == 5 - clear and initialize lcd screen
+	 	* clear == 6 - initialize lcd screen
 	 	*/
 #ifdef HAVE_WIRINGPIDEV
 		if (clear == 2 || clear == 3 || clear == 5 || clear == 6) {
@@ -804,8 +804,6 @@ main(int argc, char **argv)
 	getEnvConfigInt(&pin_d5, "PIN_D5", PIN_D5);
 	getEnvConfigInt(&pin_d6, "PIN_D6", PIN_D6);
 	getEnvConfigInt(&pin_d7, "PIN_D7", PIN_D7);
-#endif
-#ifdef HAVE_WIRINGPIDEV
 	lcd = lcd_initialize(bits, cols, rows, pin_rs, pin_en,
 			pin_d0, pin_d1, pin_d2, pin_d3, pin_d4, pin_d5, pin_d6, pin_d7);
 	if (lcd < 0)
@@ -851,7 +849,10 @@ main(int argc, char **argv)
 }
 
 /*
- * $Log: lcdDaemon.c,v $
+ * $Log: lcd-daemon.c,v $
+ * Revision 1.14  2024-04-22 08:03:22+05:30  Cprogrammer
+ * renamed lcdDaemon to lcd-daemon
+ *
  * Revision 1.13  2023-07-02 19:38:31+05:30  Cprogrammer
  * updated comment for GPIO pin numbers
  *

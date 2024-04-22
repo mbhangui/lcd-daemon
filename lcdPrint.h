@@ -1,5 +1,8 @@
 /*
  * $Log: lcdPrint.h,v $
+ * Revision 1.4  2024-04-22 07:59:44+05:30  Cprogrammer
+ * added sendMsg function for pinotify
+ *
  * Revision 1.3  2023-06-22 23:43:00+05:30  Cprogrammer
  * refactored lcdPrint()
  *
@@ -17,7 +20,9 @@
 #endif
 #ifdef HAVE_STDARG_H
 int             lcdPrint    __P((substdio *, int, int, int, char *, ...));
+int             sendMsg     __P((substdio *, char *, char *,...));
 #else
 int             lcdPrint    ();
+int             sendMsg     ();
 #endif
 

@@ -1,12 +1,14 @@
+<!-- # vim: wrap
+-->
 # lcd-daemon
 
 [![lcd-daemon C/C++ CI](https://github.com/mbhangui/lcd-daemon/actions/workflows/lcd-daemon-c-cpp.yml/badge.svg)](https://github.com/mbhangui/lcd-daemon/actions/workflows/lcd-daemon-c-cpp.yml)
 
-lcd-daemon package is a package consisting of lcdDaemon and pilcd. lcdDaemon implements a UDP server and also reads a local named pipe (FIFO) to read data from local and remote clients to print text on a LCD display. It works only for the Hitachi 4480 controller based 16x2 and 20x4 displays. The pilcd client can send text locally to lcdDaemon. One can also use the echo command instead of the pilcd command to write print the text on the LCD.
+lcd-daemon package is a package consisting of lcd-daemon, notify-daemon, pilcd and pinotify. lcd-daemon implements a UDP server and also reads a local named pipe (FIFO) to read data from local and remote clients to print text on a LCD display. It works only for the Hitachi 4480 controller based 16x2 and 20x4 displays. The pilcd client can send text locally to lcd-daemon. One can also use the echo command instead of the pilcd command to write print the text on the LCD.
 
 lcd-daemon uses libwiringpi and libwiringpidev from https://github.com/mbhangui/wiringPi. The original Author of Wiring Pi is Gordon Henderson. Wiring Pi was what made me love the Raspberry Pis.
 
-The wiring scheme used by lcdDaemon is as below. If you wire it differently you don't have to rebuild the package. Instead you can set environment variables PIN\_RS, PIN\_EN, PIN\_D0 to PIN\_D7.
+The wiring scheme used by lcd-daemon is as below. If you wire it differently you don't have to rebuild the package. Instead you can set environment variables PIN\_RS, PIN\_EN, PIN\_D0 to PIN\_D7.
 
 Pin Name|WiringPI Number|GPIO Pin|RPI Board Number|LCD Pin Number
 --------|---------------|--------|----------------|--------------
@@ -37,7 +39,7 @@ dtparam=pin_rs=25,pin_en=24,display_height=4,display_width=20
 
 Anything written to this device will get displayed on the LCD display. Clearing the display is as simple as executing `clear > /dev/lcd`. This can be done without having to install the lcd-daemon package. But you can use the lcd-daemon package for having control on which row to print, scroll text and ability to display text on the LCD display from the network.
 
-lcdDaemon reads a named pipe and a UDP socket in line mode and expects the line to be in a simple format of arguments, separated by whitespace, as detailed below.
+lcd-daemon reads a named pipe and a UDP socket in line mode and expects the line to be in a simple format of arguments, separated by whitespace, as detailed below.
 
 <u>rownum</u> <u>scroll</u> <u>clear</u>:<u>message</u>
 
@@ -52,16 +54,26 @@ where
    5. clear and initialize screen without displaying text
    6. initialize screen without displaying text
 
-The <b>pilcd</b> is one client that writes to the named pipe in the above format. You can use any program/script to display text on the LCD display by using the above format. Expanding this further you can use any UDP client to send text to be printed on the LCD screen by sending the text to UDP port 1806.
+<b>pilcd</b> is one client that writes to the named pipe in the above format. You can use any program/script to display text on the LCD display by using the above format. Expanding this further you can use any UDP client to send text to be printed on the LCD screen by sending the text to UDP port 1806.
+
+<b>notify-daemon</b> server prints desktop notifications over requests received locally on /run/notify-desktop/notify-fifo or  requests received on UDP port 1807.
+
+notify-daemon reads a named piope and a UDP socket in line mode and expects the line to be in a simple format of arguments as detailed below
+<b>summary:summary_text\nbody:body1\nbody:body2\nend:\n</b>
+
+where
+ * summary: This specifies to use <u>summary_text</u> as the value of summary for desktop notificaton. See the man page of notify-send(1)
+ * body: This specifies to use <u>body_text</u> as the body. You can speciffy multiple bodies ending with new line. Specifying multiple body: statements allows multi-line desktop notification
+ * end: This ends body of the desktop notification
 
 ## Example
 
-On the server which has the LCD display connected, let us run <b>lcdDaemon</b>
+On the server which has the LCD display connected, let us run <b>lcd-daemon</b>
 
 ```
-Start the lcdDaemon
+Start lcd-daemon
 
-$ sudo /usr/sbin/lcdDaemon -b 4 -c 20 -r 4 &
+$ sudo /usr/sbin/lcd-daemon -b 4 -c 20 -r 4 &
 
 Send message locally using picd on the first row
 
@@ -74,6 +86,17 @@ $ echo 1 0 0:Hi from local > /run/lcd-daemon/lcdfifo
 Scroll message to a remote server 192.168.2.101 having the LCD display on row 3
 
 $ echo 2 1 0:Hi from overseas | nc -u 192.168.2.101 1806
+
+Start notify-daemon
+$ sudo /usr/sbin/notify-daemon
+
+Send desktop notification locally using pinotify
+
+$ pinotify notify-test "Hi From Local" "date is $(date)"
+
+Send desktop notification to a remote desktop at 192.168.1.100
+
+$ printf "summary:notify-test\nbody:Hi From Local\nbody:today is a good day\n"| nc -u 192.168.1.100 1807
 ```
 
 # Installation
@@ -132,17 +155,17 @@ To install use the debian command
 $ sudo dpkg -i /home/pi/stage/lcd-daemon-1.0-1.1_arm64.deb
 ```
 
-## Running lcdDaemon
+## Running lcd-daemon
 
-You can run lcdDaemon on the command line or put it in rc.local or create a systemd script or use your own favourite method. I use [daemontools](https://cr.yp.to/daemontools.html) and use [svscan](https://github.com/mbhangui/indimail-mta/wiki/svscan.8). The RPM/debian installation creates a service for lcdDaemon as <u>/service/lcd-daemon</u>. My fork of Dan's daemontools package is [here](https://github.com/mbhangui/indimail-mta/tree/master/daemontools-x). svscan runs [supervise](https://github.com/mbhangui/indimail-mta/wiki/supervise.8) which can run lcdDaemon continuously. If you have built lcdDaemon using the source, you can run the <u>create\_service</u> to create the service. Run the <u>create\_service</u> command to create a service for lcdDeamon in <u>/service/lcd-daemon</u>. Once you install the daemontools package, lcdDaemon will start automatically on boot. You can manually start or stop using the [svc](https://github.com/mbhangui/indimail-mta/wiki/svc.8) command.
+You can run lcd-daemon on the command line or put it in rc.local or create a systemd script or use your own favourite method. I use [daemontools](https://cr.yp.to/daemontools.html) and use [svscan](https://github.com/mbhangui/indimail-mta/wiki/svscan.8). The RPM/debian installation creates a service for lcd-daemon as <u>/service/lcd-daemon</u>. My fork of Dan's daemontools package is [here](https://github.com/mbhangui/indimail-mta/tree/master/daemontools-x). svscan runs [supervise](https://github.com/mbhangui/indimail-mta/wiki/supervise.8) which can run lcd-daemon continuously. If you have built lcd-daemon using the source, you can run the <u>create\_service</u> to create the service. Run the <u>create\_service</u> command to create a service for lcdDeamon in <u>/service/lcd-daemon</u>. Once you install the daemontools package, lcd-daemon will start automatically on boot. You can manually start or stop using the [svc](https://github.com/mbhangui/indimail-mta/wiki/svc.8) command.
 
-**Start lcdDaemon**
+**Start lcd-daemon**
 
 ```
 $ sudo svc -u /service/lcd-daemon
 ```
 
-**Stop lcdDaemon**
+**Stop lcd-daemon**
 
 ```
 $ sudo svc -d /service/lcd-daemon
@@ -156,7 +179,7 @@ $ sudo apt-get update && sudo apt-get install daemontools
 
 **TODO**
 
-I need to upload the man pages for lcdDaemon and pilcd here. Will do it sometime later.
+I need to upload the man pages for lcd-daemon and pilcd here. Will do it sometime later.
 
 ## Prebuilt Binaries
 
@@ -188,7 +211,7 @@ $ sudo dnf update && sudo dnf install lcd-daemon
 
 ## IMPORTANT NOTE for binary builds on debian
 
-You don't need to read this if you are going to have your own method to run lcdDaemon on startup. But if you want to use daemontools to run lcdDaemon you need to read this. debian/ubuntu repositories already has daemontools which is far behind in terms of feature list than the daemontools repo provides. When you install daemontools, apt-get may pull the wrong version with limited features. Also `apt-get install daemontools` or `apt-get install daemontools` will get installed with errors, leading to an incomplete setup. You need to ensure that the two packages get installed from the daemontools repository instead of the official debian repository.
+You don't need to read this if you are going to have your own method to run lcd-daemon on startup. But if you want to use daemontools to run lcd-daemon you need to read this. debian/ubuntu repositories already has daemontools which is far behind in terms of feature list than the daemontools repo provides. When you install daemontools, apt-get may pull the wrong version with limited features. Also `apt-get install daemontools` or `apt-get install daemontools` will get installed with errors, leading to an incomplete setup. You need to ensure that the two packages get installed from the daemontools repository instead of the official debian repository.
 
 All you need to do is set a higher preference for the daemontools repository by creating /etc/apt/preferences.d/preferences with the following contents
 

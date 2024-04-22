@@ -12,9 +12,9 @@ or
 .fi
 
 .SH DESCRIPTION
-\fBpilcd(1)\fR communicates with \fBlcdDaemon\fR(8) to print text on 20x4
+\fBpilcd(1)\fR communicates with \fBlcd-daemon\fR(8) to print text on 20x4
 or 16x2 LCD displays with Hitachi 44780 controllers. It uses a named pipe
-to send messages to \fBlcdDaemon\fR(8). The default named pipe is
+to send messages to \fBlcd-daemon\fR(8). The default named pipe is
 \fIrundir/lcd-daemon/lcdfifo\fR which can be changed by setting
 \fBLCDFIFO\fR environment variable. \fIrundir\fR is /run, /var/run or /tmp
 depending on your system.
@@ -85,4 +85,5 @@ the return value will be 111.
 Manvendra Bhangui <lcd-daemon@indimail.org>
 
 .SH "SEE ALSO"
-supervise(8), svc(8), envdir(8), multilog(8), lcdDaemon(8)
+supervise(8), svc(8), envdir(8), multilog(8), lcd-daemon(8),
+notify-daemon(8)

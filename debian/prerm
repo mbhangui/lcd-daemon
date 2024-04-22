@@ -46,7 +46,10 @@ fi
 if [ " $1" = " upgrade" -o " $1" = " deconfigure" ] ; then
 	exit 0
 fi
-if [ -x ${prefix}/sbin/minisvc -a -d ${servicedir}/lcd-daemon ] ; then
-	${prefix}/sbin/minisvc --rmsvc=${servicedir}/lcd-daemon
-fi
-rm -fr /var/log/svc/lcd-daemon
+for j in lcd-daemon notify-desktop
+do
+	if [ -x ${prefix}/sbin/minisvc -a -d ${servicedir}/$j ] ; then
+		${prefix}/sbin/minisvc --rmsvc=${servicedir}/$j
+	fi
+	rm -fr /var/log/svc/$j
+done

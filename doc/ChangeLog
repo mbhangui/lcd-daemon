@@ -1,12 +1,14 @@
 * Wed Jun 21 2023 15:57:02 +0000 Manvendra Bhangui <@email@> @version@-@release@%{?dist}
 - 23/08/2015
-1.  Added pilcd command, lcdDaemon server
+1.  Added pilcd command, lcd-daemon server
 2.  Created lcd daemon package
 - 21/06/2023
 3.  First public release
 - 23/06/2023
-4.  Specifying bits, cols, rows moved to lcdDaemon from pilcd
-5.  lcdDaemon.c: Added startup, shutdown message
+4.  Specifying bits, cols, rows moved to lcd-daemon from pilcd
+5.  lcd-daemon.c: Added startup, shutdown message
 6.  configure.ac: corrected bugreport address
-7.  lcdDaemon.c, pilcd.c, lcdPrint.c: interchanged rownum and scroll fields
-8.  lcdDaemon.c: prevent row number to be greater than rows supported by LCD
+7.  lcd-daemon.c, pilcd.c, lcdPrint.c: interchanged rownum and scroll fields
+8.  lcd-daemon.c: prevent row number to be greater than rows supported by LCD
+- 21/04/2024
+9.  added notify-daemon.c, pinotify.c

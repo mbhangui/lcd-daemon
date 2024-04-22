@@ -30,12 +30,15 @@ case "$1" in
 			rundir=${servicedir}
 		fi
 		set +e
-		${prefix}/bin/svstat ${servicedir}/lcd-daemon >/dev/null 2>&1
-		if [ $? -eq 0 ] ; then
-			mkdir -p ${rundir}/lcd-daemon
-			${prefix}/bin/svc -d ${servicedir}/lcd-daemon
-			touch ${rundir}/lcd-daemon/.down
-		fi
+		for j in lcd-daemon notify-desktop
+		do
+			${prefix}/bin/svstat ${servicedir}/$j >/dev/null 2>&1
+			if [ $? -eq 0 ] ; then
+				mkdir -p ${rundir}/$j
+				${prefix}/bin/svc -d ${servicedir}/$j
+				touch ${rundir}/$j/.down
+			fi
+		done
 		exit 0
 	fi
 	;;
