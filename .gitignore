@@ -71,3 +71,4 @@ lcd-daemon.spec
 *.BAK
 COPYING
 select.h
+pinotify

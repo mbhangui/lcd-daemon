@@ -23,13 +23,13 @@ for the named pipe \fIfifo\fR, if it doesn't exist. The file mode for
 using /service/notify-desktop service. You can however use your own method
 to start \fBnotify-daemon\fR(8).
 
-By default, \fBnotify-daemon\fR(8) creates \fIrundir/lcd-daemon/lcdfifo\fR
-named pipe and listens on UDP port \fB1807\fR.
+By default, \fBnotify-daemon\fR(8) creates
+\fIrundir/notify-desktop/notify-fifo\fR named pipe and listens on UDP port
+\fB1807\fR.
 
 You can use \fBnc\fR(1) command or any TCP applciation to write a message
 to the UDP port 1807. You can use any any client that writes to the named
-pipe \fIrundir/lcd-daemon/lcdfifo\fR, created by \fBnotify-daemon\fR(8).
-\fBpilcd\fR(1) is one client that writes to the named pipe created by
+pipe \fIrundir/notify-desktop/notify-fifo\fR, created by
 \fBnotify-daemon\fR(8).
 
 Any client has to write the message by following format below (<sp> stands
@@ -133,4 +133,4 @@ the return value will be 111.
 Manvendra Bhangui <lcd-daemon@indimail.org>
 
 .SH "SEE ALSO"
-supervise(8), svc(8), envdir(8), multilog(8), pilcd(1)
+supervise(8), svc(8), envdir(8), multilog(8), lcd-daemon(8)
