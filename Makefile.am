@@ -52,13 +52,13 @@ notify_daemon_DEPENDENCIES = getln.lo getln2.lo scan_ulong.lo stralloc_catb.lo \
 	stralloc_eady.lo subprintf.lo error_str.lo error.lo substdo.lo str_chr.lo \
 	str_len.lo alloc.lo alloc_re.lo stralloc_opyb.lo byte_chr.lo byte_copy.lo \
 	byte_cr.o stralloc_opys.lo substdi.lo stralloc_pend.lo getEnvConfig.lo \
-	envread.lo scan_8long.lo str_rchr.lo substdio.lo str_diffn.o \
+	envread.lo scan_8long.lo fmt_ulong.lo str_rchr.lo substdio.lo str_diffn.o \
 	timeoutread.lo ndelay.lo
 notify_daemon_LDADD = getln.lo getln2.lo scan_ulong.lo stralloc_catb.lo stralloc_eady.lo \
 	error_str.lo error.lo substdo.lo str_chr.lo subprintf.lo byte_chr.lo byte_copy.lo \
 	str_len.lo alloc.lo alloc_re.lo stralloc_pend.lo substdi.lo stralloc_opyb.lo \
 	byte_cr.o stralloc_opys.lo getEnvConfig.lo envread.lo scan_8long.lo str_diffn.o \
-	timeoutread.lo str_rchr.lo substdio.lo ndelay.lo
+	timeoutread.lo str_rchr.lo fmt_ulong.lo substdio.lo ndelay.lo
 
 pilcd_SOURCES = pilcd.c
 pilcd_LDADD = substdio.lo substdo.lo str_len.lo lcdPrint.lo error_str.lo error.lo \

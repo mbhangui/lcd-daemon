@@ -1,5 +1,5 @@
 /*
- * $Id: notify-daemon.c,v 1.1 2024-04-22 07:52:39+05:30 Cprogrammer Exp mbhangui $
+ * $Id: notify-daemon.c,v 1.2 2025-02-18 11:14:22+05:30 Cprogrammer Exp mbhangui $
  */
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -55,6 +55,7 @@
 #include "getln.h"
 #include "error.h"
 #include "str.h"
+#include "fmt.h"
 #include "timeoutread.h"
 #include "ndelay.h"
 
@@ -69,10 +70,11 @@ typedef enum {
 static char     ssoutbuf[512], sserrbuf[512];
 static substdio ssout = SUBSTDIO_FDBUF(write, 1, ssoutbuf, sizeof ssoutbuf);
 static substdio sserr = SUBSTDIO_FDBUF(write, 2, sserrbuf, sizeof(sserrbuf));
-static int      verbose, read_timeout = -1, port = -1;
+static int      verbose, read_timeout = -1, port = -1, display_timeout = -1;
 static stralloc _dirbuf = { 0 };
 static stralloc summary = { 0}, body = { 0 };
 static char     *startup_msg, *shutdown_msg;
+static char      strnum[FMT_ULONG];
 req_type        fdtype;
 
 
@@ -81,17 +83,33 @@ print_message()
 {
 	pid_t           pid;
 	int             status;
-	char           *(args[4]);
+	char           *(args[6]);
 
 	args[0] = "notify-send";
-	if (summary.len)
-		args[1] = summary.s;
-	else
-		args[1] = "notify-desktop";
-	if (!body.len)
-		return;
-	args[2] = body.s;
-	args[3] = NULL;
+	if (display_timeout != -1) {
+		fmt_ulong(strnum, display_timeout);
+		args[1] = "-t";
+		args[2] = strnum;
+		if (summary.len)
+			args[3] = summary.s;
+		else
+			args[3] = "notify-desktop";
+		if (!body.len)
+			return;
+		args[4] = body.s;
+		args[5] = NULL;
+	} else {
+		if (summary.len)
+			args[1] = summary.s;
+		else
+			args[1] = "notify-desktop";
+		if (!body.len)
+			return;
+		args[2] = body.s;
+		args[3] = NULL;
+		args[4] = NULL;
+		args[5] = NULL;
+	}
 	switch (pid = fork())
 	{
 	case 0:
@@ -229,8 +247,8 @@ get_options(int argc, char **argv, char **fifo_path, unsigned long *fifo_mode)
 	verbose = 0;
 	*fifo_path = (char *) 0;
 	*fifo_mode = -1;
-	read_timeout = port = -1;
-	while ((c = getopt(argc, argv, "vf:m:i:s:t:p:")) != -1) {
+	read_timeout = display_timeout = port = -1;
+	while ((c = getopt(argc, argv, "vf:m:i:s:t:T:p:")) != -1) {
 		switch (c)
 		{
 		case 'v':
@@ -250,6 +268,9 @@ get_options(int argc, char **argv, char **fifo_path, unsigned long *fifo_mode)
 			break;
 		case 't':
 			scan_int(optarg, &read_timeout);
+			break;
+		case 'T':
+			scan_int(optarg, &display_timeout);
 			break;
 		case 'p':
 			scan_int(optarg, &port);
@@ -278,6 +299,10 @@ get_options(int argc, char **argv, char **fifo_path, unsigned long *fifo_mode)
 			scan_int(ptr, &read_timeout);
 		else
 			read_timeout = 300;
+	}
+	if (display_timeout == -1) {
+		if ((ptr = env_get("DISPLAY_TIMEOUT")))
+			scan_int(ptr, &display_timeout);
 	}
 	if (port == -1) {
 		if ((ptr = env_get("PORT")))
@@ -503,6 +528,9 @@ main(int argc, char **argv)
 
 /*
  * $Log: notify-daemon.c,v $
+ * Revision 1.2  2025-02-18 11:14:22+05:30  Cprogrammer
+ * added feature to set display time for notify-send
+ *
  * Revision 1.1  2024-04-22 07:52:39+05:30  Cprogrammer
  * Initial revision
  *

@@ -83,6 +83,11 @@ UDP port on which \fBnotify-daemon\fR(8) listens. If not provided this is
 No of milliseconds \fBnotify-daemon\fR(8) will read a message from a client
 before timing out. Default is \fB300\fR milliseconds.
 .TP
+\fB\-T\fR \fIdisplaytimeout\fR
+No of seconds \fBnotify-daemon\fR(8) will use \fBnotify-send\fR(1) to
+display message from a client. This is passed using \fB-t\fR argument to
+\fBnotify-send\fR(1).
+.TP
 \fB\-i\fR \fIstartup_msg\fR
 Startup message to be displayed on LCD on \fBnotify-daemon\fR(8) startup
 .TP
@@ -117,6 +122,11 @@ If -t is not provided, the env variable \fBDATA_TIMEOUT\fR is used. This is
 timeout in seconds after which \fBnotify-daemon\fR(8) will timeout when
 reading from the named pipe or from the socket. Default is \fB300\fR
 seconds.
+
+.TP
+DISPLAY_TIMEOUT
+If -T is not provided, the env variable \fBDISPLAY_TIMEOUT\fR is used. This
+is time in seconds \fBnotify-send\fR(1) will display the message.
 
 .TP
 PORT
