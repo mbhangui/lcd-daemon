@@ -68,28 +68,35 @@ Here \fImessage\fR is any string consisting of one or more words.
 .TP
 \fB\-v\fR
 Turn on verbose output
+
 .TP
 \fB\-f\fR \fIfifo\fR
 Path to fifo
+
 .TP
 \fB\-m\fR \fImode\fR
 File mode to set for \fIfifo\fR on startup.
+
 .TP
 \fB\-p\fR \fIport\fR
 UDP port on which \fBnotify-daemon\fR(8) listens. If not provided this is
 \fB1807\fR.
+
 .TP
 \fB\-t\fR \fIreadtimeout\fR
 No of milliseconds \fBnotify-daemon\fR(8) will read a message from a client
 before timing out. Default is \fB300\fR milliseconds.
+
 .TP
 \fB\-T\fR \fIdisplaytimeout\fR
-No of seconds \fBnotify-daemon\fR(8) will use \fBnotify-send\fR(1) to
-display message from a client. This is passed using \fB-t\fR argument to
+Number of milliseconds \fBnotify-daemon\fR(8) will use \fBnotify-send\fR(1)
+to display message from a client. This is passed using \fB-t\fR argument to
 \fBnotify-send\fR(1).
+
 .TP
 \fB\-i\fR \fIstartup_msg\fR
 Startup message to be displayed on LCD on \fBnotify-daemon\fR(8) startup
+
 .TP
 \fB\-s\fR \fIshutdown_msg\fR
 Shutdown message to be displayed on LCD on \fBnotify-daemon\fR(8) startup
@@ -126,7 +133,7 @@ seconds.
 .TP
 DISPLAY_TIMEOUT
 If -T is not provided, the env variable \fBDISPLAY_TIMEOUT\fR is used. This
-is time in seconds \fBnotify-send\fR(1) will display the message.
+is time in milliseconds \fBnotify-send\fR(1) will display the message.
 
 .TP
 PORT
