@@ -1,5 +1,5 @@
 /*
- * $Id: pinotify.c,v 1.2 2025-05-18 21:59:58+05:30 Cprogrammer Exp mbhangui $
+ * $Id: pinotify.c,v 1.3 2025-05-18 22:41:29+05:30 Cprogrammer Exp mbhangui $
  */
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -14,7 +14,7 @@
 #include "substdio.h"
 #include "stralloc.h"
 #include "lcdPrint.h"
-#include "subprintf.h"
+#include "qprintf.h"
 #include "str.h"
 
 static char     ssoutbuf[512], sserrbuf[512];
@@ -78,6 +78,9 @@ main(int argc, char **argv)
 
 /*
  * $Log: pinotify.c,v $
+ * Revision 1.3  2025-05-18 22:41:29+05:30  Cprogrammer
+ * use libqmail qprintf.h for subprintf function
+ *
  * Revision 1.2  2025-05-18 21:59:58+05:30  Cprogrammer
  * fix gcc14 errors
  *

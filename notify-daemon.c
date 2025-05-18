@@ -1,5 +1,5 @@
 /*
- * $Id: notify-daemon.c,v 1.3 2025-05-18 21:59:46+05:30 Cprogrammer Exp mbhangui $
+ * $Id: notify-daemon.c,v 1.4 2025-05-18 22:40:40+05:30 Cprogrammer Exp mbhangui $
  */
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -51,7 +51,7 @@
 #include "scan.h"
 #include "getEnvConfig.h"
 #include "env.h"
-#include "subprintf.h"
+#include "qprintf.h"
 #include "getln.h"
 #include "error.h"
 #include "str.h"
@@ -471,7 +471,7 @@ main(int argc, char **argv)
 		return (1);
 	}
 	if (chmod(fifo_path, (mode_t) fifo_mode)) {
-		if (subprintf(&sserr, "chmod: %o %s: %s\n", get_octal((mode_t) fifo_mode), fifo_path, error_str(errno)) == -1)
+		if (subprintf(&sserr, "chmod: %s %s: %s\n", get_octal((mode_t) fifo_mode), fifo_path, error_str(errno)) == -1)
 			_exit (111);
 		flush(2);
 		_exit (111);
@@ -528,6 +528,9 @@ main(int argc, char **argv)
 
 /*
  * $Log: notify-daemon.c,v $
+ * Revision 1.4  2025-05-18 22:40:40+05:30  Cprogrammer
+ * fixed argument type for get_octal()
+ *
  * Revision 1.3  2025-05-18 21:59:46+05:30  Cprogrammer
  * fix gcc14 errors
  *

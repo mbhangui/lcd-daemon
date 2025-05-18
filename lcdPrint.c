@@ -1,5 +1,8 @@
 /*
  * $Log: lcdPrint.c,v $
+ * Revision 1.8  2025-05-18 22:40:31+05:30  Cprogrammer
+ * fixed gcc14 error
+ *
  * Revision 1.7  2024-04-22 07:59:25+05:30  Cprogrammer
  * added sendMsg function for pinotify
  *
@@ -44,10 +47,10 @@
 #include "str.h"
 #include "pilcd.h"
 #include "env.h"
-#include "subprintf.h"
+#include "qprintf.h"
 
 #ifndef lint
-static char     sccsid[] = "$Id: lcdPrint.c,v 1.7 2024-04-22 07:59:25+05:30 Cprogrammer Exp mbhangui $";
+static char     sccsid[] = "$Id: lcdPrint.c,v 1.8 2025-05-18 22:40:31+05:30 Cprogrammer Exp mbhangui $";
 #endif
 
 /*
@@ -125,7 +128,7 @@ lcdPrint(va_alist)
 			_exit (111);
 		return (1);
 	}
-	substdio_fdbuf(&ssout, write, fd, outbuf, sizeof(outbuf));
+	substdio_fdbuf(&ssout, (ssize_t (*)(int,  char *, size_t)) write, fd, outbuf, sizeof(outbuf));
 	for (len = 0, ptr = buf; *ptr++; len++);
 	/*-
 	 * scroll rownum clear string
@@ -207,7 +210,7 @@ sendMsg(va_alist)
 			_exit (111);
 		return (1);
 	}
-	substdio_fdbuf(&ssout, write, fd, outbuf, sizeof(outbuf));
+	substdio_fdbuf(&ssout, (ssize_t (*)(int,  char *, size_t)) write, fd, outbuf, sizeof(outbuf));
 	for (len = 0, ptr = buf; *ptr++; len++);
 	/*-
 	 * scroll rownum clear string

@@ -1,5 +1,8 @@
 /*
  * $Log: pilcd.c,v $
+ * Revision 1.8  2025-05-18 22:41:01+05:30  Cprogrammer
+ * use libqmail qprintf.h for subprintf function
+ *
  * Revision 1.7  2025-05-18 21:59:52+05:30  Cprogrammer
  * fix gcc14 errors
  *
@@ -32,7 +35,7 @@
 #include "substdio.h"
 #include "stralloc.h"
 #include "lcdPrint.h"
-#include "subprintf.h"
+#include "qprintf.h"
 #include "scan.h"
 #include "str.h"
 

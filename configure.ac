@@ -1,5 +1,8 @@
 #
 # $Log: configure.ac,v $
+# Revision 1.5  2025-05-18 22:39:11+05:30  Cprogrammer
+# added check for libqmail
+#
 # Revision 1.4  2023-06-24 22:36:18+05:30  Cprogrammer
 # updated AC_CHECK_HEADERS
 #
@@ -13,7 +16,7 @@
 # Initial revision
 #
 #
-# $Id: configure.ac,v 1.4 2023-06-24 22:36:18+05:30 Cprogrammer Exp mbhangui $
+# $Id: configure.ac,v 1.5 2025-05-18 22:39:11+05:30 Cprogrammer Exp mbhangui $
 #
 AC_PREREQ([2.64])
 AC_INIT([lcd-daemon],[m4_normalize(m4_include(conf-version))],[m4_normalize(m4_include(conf-email))],[lcd-daemon],[https://github.com/mbhangui/lcd-daemon])
@@ -45,6 +48,11 @@ AC_CHECK_HEADERS(ctype.h errno.h stdarg.h unistd.h fcntl.h signal.h inttypes.h)
 AC_CHECK_HEADERS(sys/types.h sys/wait.h sys/file.h sys/socket.h netinet/in.h)
 AC_CHECK_HEADERS(wiringPi.h lcd.h)
 
+AC_CHECK_LIB(qmail, substdio_fdbuf, [AC_SUBST([LIB_QMAIL], ["-lqmail"]) AC_DEFINE([HAVE_QMAIL], [1],[qmail Library])],noqmail=t,)
+if test " $noqmail" = " t"
+then
+  AC_MSG_ERROR(Could not find qmail library.)
+fi
 AC_CHECK_LIB(wiringPi,    millis,    [AC_SUBST([LIB_WIRINGPI],   ["-lwiringPi"])    AC_DEFINE([HAVE_WIRINGPI],    [1],[WiringPi Library])],,-lwiringPi)
 AC_CHECK_LIB(wiringPiDev, lcdPrintf, [AC_SUBST([LIB_WIRINGPIDEV],["-lwiringPiDev"]) AC_DEFINE([HAVE_WIRINGPIDEV], [1],[WiringPiDev Library])],,-lwiringPiDev)
 AC_CHECK_FUNC(flock)
