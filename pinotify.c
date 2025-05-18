@@ -1,5 +1,5 @@
 /*
- * $Id: pinotify.c,v 1.1 2024-04-22 08:03:39+05:30 Cprogrammer Exp mbhangui $
+ * $Id: pinotify.c,v 1.2 2025-05-18 21:59:58+05:30 Cprogrammer Exp mbhangui $
  */
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -18,8 +18,8 @@
 #include "str.h"
 
 static char     ssoutbuf[512], sserrbuf[512];
-static substdio ssout = SUBSTDIO_FDBUF(write, 1, ssoutbuf, sizeof ssoutbuf);
-static substdio sserr = SUBSTDIO_FDBUF(write, 2, sserrbuf, sizeof(sserrbuf));
+static substdio ssout = SUBSTDIO_FDBUF((ssize_t (*)(int,  char *, size_t)) write, 1, ssoutbuf, sizeof ssoutbuf);
+static substdio sserr = SUBSTDIO_FDBUF((ssize_t (*)(int,  char *, size_t)) write, 2, sserrbuf, sizeof sserrbuf);
 stralloc summary = { 0 }, message = { 0 };
 
 static void
@@ -78,6 +78,9 @@ main(int argc, char **argv)
 
 /*
  * $Log: pinotify.c,v $
+ * Revision 1.2  2025-05-18 21:59:58+05:30  Cprogrammer
+ * fix gcc14 errors
+ *
  * Revision 1.1  2024-04-22 08:03:39+05:30  Cprogrammer
  * Initial revision
  *

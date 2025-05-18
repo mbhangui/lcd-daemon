@@ -15,3 +15,7 @@
 - 18/02/2025
 10. Added -T argument, DISPLAY_TIMEOUT env variable for the time in seconds
     notify-send will display message.
+- 18/05/2025
+11. Fix gcc14 errors for lcd-daemon.c, notify-daemon.c, pilcd.c, pinotify.c,
+    substdio.h
+

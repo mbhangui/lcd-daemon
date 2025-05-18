@@ -1,5 +1,5 @@
 /*
- * $Id: notify-daemon.c,v 1.2 2025-02-18 11:14:22+05:30 Cprogrammer Exp mbhangui $
+ * $Id: notify-daemon.c,v 1.3 2025-05-18 21:59:46+05:30 Cprogrammer Exp mbhangui $
  */
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -68,8 +68,8 @@ typedef enum {
 #define NOTIFYFIFO "/tmp/notify-desktop/notify-fifo"
 
 static char     ssoutbuf[512], sserrbuf[512];
-static substdio ssout = SUBSTDIO_FDBUF(write, 1, ssoutbuf, sizeof ssoutbuf);
-static substdio sserr = SUBSTDIO_FDBUF(write, 2, sserrbuf, sizeof(sserrbuf));
+static substdio ssout = SUBSTDIO_FDBUF((ssize_t (*)(int,  char *, size_t)) write, 1, ssoutbuf, sizeof ssoutbuf);
+static substdio sserr = SUBSTDIO_FDBUF((ssize_t (*)(int,  char *, size_t)) write, 2, sserrbuf, sizeof sserrbuf);
 static int      verbose, read_timeout = -1, port = -1, display_timeout = -1;
 static stralloc _dirbuf = { 0 };
 static stralloc summary = { 0}, body = { 0 };
@@ -143,7 +143,7 @@ die_nomem()
 }
 
 static void
-SigChild(void)
+SigChild(int x)
 {
     int             status;
     pid_t           pid;
@@ -157,12 +157,12 @@ SigChild(void)
             continue;
         break;
     } /*- for (; pid = waitpid(-1, &status, WNOHANG | WUNTRACED);) -*/
-    (void) signal(SIGCHLD, (void (*)()) SigChild);
+    (void) signal(SIGCHLD, (void (*)(int)) SigChild);
     return;
 }
 
 static void
-SigTerm(void)
+SigTerm(int x)
 {
 	if (shutdown_msg) {
 		if (!stralloc_copyb(&summary, "notify-desktop", 14) ||
@@ -314,7 +314,7 @@ get_options(int argc, char **argv, char **fifo_path, unsigned long *fifo_mode)
 }
 
 ssize_t
-saferead(int fd, char *buf, int len)
+saferead(int fd, char *buf, size_t len)
 {
 	int             r;
 
@@ -487,8 +487,8 @@ main(int argc, char **argv)
 			_exit(111);
 		_exit (111);
 	}
-	(void) signal(SIGTERM, (void (*)()) SigTerm);
-	(void) signal(SIGCHLD, (void (*)()) SigChild);
+	(void) signal(SIGTERM, (void (*)(int)) SigTerm);
+	(void) signal(SIGCHLD, (void (*)(int)) SigChild);
 	if ((sockfd = initialize_socket()) == -1)
 		_exit(111);
 	if (startup_msg) {
@@ -528,6 +528,9 @@ main(int argc, char **argv)
 
 /*
  * $Log: notify-daemon.c,v $
+ * Revision 1.3  2025-05-18 21:59:46+05:30  Cprogrammer
+ * fix gcc14 errors
+ *
  * Revision 1.2  2025-02-18 11:14:22+05:30  Cprogrammer
  * added feature to set display time for notify-send
  *

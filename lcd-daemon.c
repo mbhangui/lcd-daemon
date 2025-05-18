@@ -1,5 +1,5 @@
 /*
- * $Id: lcd-daemon.c,v 1.14 2024-04-22 08:03:22+05:30 Cprogrammer Exp mbhangui $
+ * $Id: lcd-daemon.c,v 1.15 2025-05-18 21:59:37+05:30 Cprogrammer Exp mbhangui $
  */
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -99,8 +99,8 @@ typedef enum {
 
 
 static char     ssoutbuf[512], sserrbuf[512];
-static substdio ssout = SUBSTDIO_FDBUF(write, 1, ssoutbuf, sizeof ssoutbuf);
-static substdio sserr = SUBSTDIO_FDBUF(write, 2, sserrbuf, sizeof(sserrbuf));
+static substdio ssout = SUBSTDIO_FDBUF((ssize_t (*)(int,  char *, size_t)) write, 1, ssoutbuf, sizeof ssoutbuf);
+static substdio sserr = SUBSTDIO_FDBUF((ssize_t (*)(int,  char *, size_t)) write, 2, sserrbuf, sizeof sserrbuf);
 static int      childpid[4] = {-1,-1,-1,-1};
 static int      lcd = -1, rows, cols, verbose, read_timeout = -1, port = -1;
 static stralloc _dirbuf = { 0 };
@@ -131,7 +131,7 @@ die_nomem()
 }
 
 static void
-SigChild(void)
+SigChild(int x)
 {
     int             status, i;
     pid_t           pid;
@@ -149,12 +149,12 @@ SigChild(void)
 		if (pid == childpid[i])
 			childpid[i] = -1;
 	}
-    (void) signal(SIGCHLD, (void (*)()) SigChild);
+    (void) signal(SIGCHLD, (void (*)(int)) SigChild);
     return;
 }
 
 static void
-SigTerm(void)
+SigTerm(int x)
 {
     int             i;
 
@@ -174,7 +174,7 @@ SigTerm(void)
 }
 
 static void
-die1()
+die1(int x)
 {
 	subprintf(&sserr, "%d: ARGH!!! i have been murdered\n", getpid());
 	flush(0);
@@ -182,7 +182,7 @@ die1()
 }
 
 static void
-die2()
+die2(int x)
 {
 	flush(0);
 	_exit (0);
@@ -522,7 +522,7 @@ lcd_initialize(int bits, int cols, int row, int rs, int en,
 #endif
 
 ssize_t
-saferead(int fd, char *buf, int len)
+saferead(int fd, char *buf, size_t len)
 {
 	int             r;
 
@@ -657,8 +657,8 @@ read_data(int fd, int bits, int cols, int rows, int delay)
 				flush(2);
 				return (1);
 			case 0:
-				(void) signal(SIGTERM, (void (*)()) die1);
-				(void) signal(SIGUSR1, (void (*)()) die2);
+				(void) signal(SIGTERM, (void (*)(int)) die1);
+				(void) signal(SIGUSR1, (void (*)(int)) die2);
 				close(fd);
 				for (i = 0;;) {
 					lockfd = lockfile(1, 0);
@@ -791,8 +791,8 @@ main(int argc, char **argv)
 #else
 	initialiseEpoch();
 #endif
-	(void) signal(SIGTERM, (void (*)()) SigTerm);
-	(void) signal(SIGCHLD, (void (*)()) SigChild);
+	(void) signal(SIGTERM, (void (*)(int)) SigTerm);
+	(void) signal(SIGCHLD, (void (*)(int)) SigChild);
 #ifdef HAVE_WIRINGPIDEV
 	getEnvConfigInt(&pin_rs, "PIN_RS", PIN_RS);
 	getEnvConfigInt(&pin_en, "PIN_EN", PIN_EN);
@@ -850,6 +850,9 @@ main(int argc, char **argv)
 
 /*
  * $Log: lcd-daemon.c,v $
+ * Revision 1.15  2025-05-18 21:59:37+05:30  Cprogrammer
+ * fix gcc14 errors
+ *
  * Revision 1.14  2024-04-22 08:03:22+05:30  Cprogrammer
  * renamed lcdDaemon to lcd-daemon
  *

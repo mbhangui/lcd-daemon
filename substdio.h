@@ -1,5 +1,8 @@
 /*
  * $Log: substdio.h,v $
+ * Revision 1.2  2025-05-18 22:00:04+05:30  Cprogrammer
+ * fix gcc14 errors
+ *
  * Revision 1.1  2014-08-23 09:07:30+05:30  Cprogrammer
  * Initial revision
  *
@@ -9,27 +12,25 @@
 #define SUBSTDIO_H
 #include <sys/types.h>
 
-typedef struct substdio
-{
+typedef struct substdio {
 	char           *x;
-	int             p;
-	int             n;
+	unsigned int    p;
+	size_t          n;
 	int             fd;
-	ssize_t         (*op) ();
-}
-substdio;
+	ssize_t         (*op) (int, char *, size_t);
+} substdio;
 
 #define SUBSTDIO_FDBUF(op,fd,buf,len) { (buf), 0, (len), (fd), (op) }
 
-void            substdio_fdbuf(substdio *, ssize_t (*op) (), int, char *, int);
+void            substdio_fdbuf(substdio *, ssize_t (*op) (int, char *, size_t), int, char *, size_t);
 int             substdio_flush(substdio *);
-int             substdio_putalign(substdio *,char *,unsigned int);
-int             substdio_put(substdio *, char *, int);
-int             substdio_bput(substdio *, char *, int);
-int             substdio_putflush(substdio *, char *, int);
-int             substdio_puts(substdio *, char *);
-int             substdio_bputs(substdio *, char *);
-int             substdio_putsflush(substdio *, char *);
+int             substdio_putalign(substdio *, const char *, size_t);
+int             substdio_put(substdio *, const char *, size_t);
+int             substdio_bput(substdio *, const char *, size_t);
+int             substdio_putflush(substdio *, const char *, size_t);
+int             substdio_puts(substdio *, const char *);
+int             substdio_bputs(substdio *, const char *);
+int             substdio_putsflush(substdio *, const char *);
 int             substdio_get(substdio *, char *, int);
 int             substdio_bget(substdio *, char *, int);
 int             substdio_feed(substdio *);

@@ -1,5 +1,8 @@
 /*
  * $Log: pilcd.c,v $
+ * Revision 1.7  2025-05-18 21:59:52+05:30  Cprogrammer
+ * fix gcc14 errors
+ *
  * Revision 1.6  2023-06-23 17:47:36+05:30  Cprogrammer
  * interchanged rownum, scroll arguments
  *
@@ -34,8 +37,8 @@
 #include "str.h"
 
 static char     ssoutbuf[512], sserrbuf[512];
-static substdio ssout = SUBSTDIO_FDBUF(write, 1, ssoutbuf, sizeof ssoutbuf);
-static substdio sserr = SUBSTDIO_FDBUF(write, 2, sserrbuf, sizeof(sserrbuf));
+static substdio ssout = SUBSTDIO_FDBUF((ssize_t (*)(int,  char *, size_t)) write, 1, ssoutbuf, sizeof ssoutbuf);
+static substdio sserr = SUBSTDIO_FDBUF((ssize_t (*)(int,  char *, size_t)) write, 2, sserrbuf, sizeof sserrbuf);
 stralloc message = {0};
 
 static void
