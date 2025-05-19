@@ -19,3 +19,5 @@
 11. Fix gcc14 errors for lcd-daemon.c, notify-daemon.c, pilcd.c, pinotify.c,
     substdio.h
 12. lcd-daemon.c, notify-daemon.c: Fixed argument type for get_octal()
+- 19/05/2025
+13. lcd-daemon.spec, lcd-daemon.dsc: added libqmail-devel in BuildRequires

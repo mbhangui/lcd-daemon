@@ -31,7 +31,7 @@ License: LGPLv3+
 Group: Applications/Multimedia
 URL: https://github.com/mbhangui/lcd-daemon
 BuildRequires: gcc gcc-c++ make autoconf automake libtool
-BuildRequires: glibc glibc-devel
+BuildRequires: glibc glibc-devel libqmail-devel
 # only for raspberry pi distributions
 # TODO: need to find a variable name instead of raspberry_version
 %if 0%{?raspbian_version}
@@ -59,7 +59,7 @@ https://github.com/WiringPi/WiringPi.
 %setup -q
 
 %build
-%configure --prefix=%{_prefix} --mandir=%{_prefix}/share/man --libexecdir=%{_prefix}/libexec
+./configure --prefix=%{_prefix} --sbindir=%{_prefix}/sbin --mandir=%{_prefix}/share/man --libexecdir=%{_prefix}/libexec
 
 %install
 %{__make} -s %{?_smp_mflags}
@@ -70,8 +70,8 @@ find %{buildroot}%{_mandir} -type f -exec gzip -q {} \;
 %defattr (-,root,root)
 %doc LICENSE README.md
 %dir %attr(755,root,root) %{_libexecdir}/%{name}
-%{_sbindir}/lcd-daemon
-%{_sbindir}/notify-daemon
+%{_prefix}/sbin/lcd-daemon
+%{_prefix}/sbin/notify-daemon
 %{_bindir}/pilcd
 %{_bindir}/pinotify
 %{_libexecdir}/%{name}/create_service
