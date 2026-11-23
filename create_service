@@ -1,6 +1,9 @@
 #!/bin/sh
 #
 # $Log: create_service,v $
+# Revision 1.7  2026-11-24 00:57:35+05:30  Cprogrammer
+# print error to log
+#
 # Revision 1.6  2024-04-22 07:58:43+05:30  Cprogrammer
 # add function to create notify-desktop service
 #
@@ -20,7 +23,7 @@
 # Initial revision
 #
 #
-# $Id: create_service,v 1.6 2024-04-22 07:58:43+05:30 Cprogrammer Exp mbhangui $
+# $Id: create_service,v 1.7 2026-11-24 00:57:35+05:30 Cprogrammer Exp mbhangui $
 #
 prefix=/usr
 LOGDIR=/var/log/svc
@@ -42,7 +45,7 @@ create_lcd_daemon_service()
 	(
 	echo "#!/bin/sh"
 	echo "#"
-	echo "# \$Id: create_service,v 1.6 2024-04-22 07:58:43+05:30 Cprogrammer Exp mbhangui $"
+	echo "# \$Id: create_service,v 1.7 2026-11-24 00:57:35+05:30 Cprogrammer Exp mbhangui $"
 	echo ""
 	echo "exec $prefix/bin/setuidgid qmaill \\"
 	echo "  $prefix/sbin/multilog t $LOGDIR/lcd-daemon"
@@ -66,7 +69,7 @@ create_lcd_daemon_service()
 	(
 	echo "#!/bin/sh"
 	echo "#"
-	echo "# \$Id: create_service,v 1.6 2024-04-22 07:58:43+05:30 Cprogrammer Exp mbhangui $"
+	echo "# \$Id: create_service,v 1.7 2026-11-24 00:57:35+05:30 Cprogrammer Exp mbhangui $"
 	echo "#"
 	echo
 	echo
@@ -98,7 +101,7 @@ create_notify_desktop_service()
 	(
 	echo "#!/bin/sh"
 	echo "#"
-	echo "# \$Id: create_service,v 1.6 2024-04-22 07:58:43+05:30 Cprogrammer Exp mbhangui $"
+	echo "# \$Id: create_service,v 1.7 2026-11-24 00:57:35+05:30 Cprogrammer Exp mbhangui $"
 	echo ""
 	echo "exec $prefix/bin/setuidgid qmaill \\"
 	echo "  $prefix/sbin/multilog t $LOGDIR/notify-desktop"
@@ -124,10 +127,10 @@ create_notify_desktop_service()
 	(
 	echo "#!/bin/sh"
 	echo "#"
-	echo "# \$Id: create_service,v 1.6 2024-04-22 07:58:43+05:30 Cprogrammer Exp mbhangui $"
+	echo "# \$Id: create_service,v 1.7 2026-11-24 00:57:35+05:30 Cprogrammer Exp mbhangui $"
 	echo "#"
 	echo
-	echo
+	echo "exec 2>&1"
 	echo "exec ${prefix}/bin/envdir ${servicedir}/notify-desktop/variables \\"
 	echo "  ${prefix}/sbin/notify-daemon -i \"Display Initialized\" -s \"Display Turned Off\" 2>&1"
 	) > "$DESTDIR"$servicedir/notify-desktop/run

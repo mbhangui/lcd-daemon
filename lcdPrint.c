@@ -1,5 +1,8 @@
 /*
  * $Log: lcdPrint.c,v $
+ * Revision 1.9  2026-11-24 00:57:50+05:30  Cprogrammer
+ * removed unused variables
+ *
  * Revision 1.8  2025-05-18 22:40:31+05:30  Cprogrammer
  * fixed gcc14 error
  *
@@ -50,7 +53,7 @@
 #include "qprintf.h"
 
 #ifndef lint
-static char     sccsid[] = "$Id: lcdPrint.c,v 1.8 2025-05-18 22:40:31+05:30 Cprogrammer Exp mbhangui $";
+static char     sccsid[] = "$Id: lcdPrint.c,v 1.9 2026-11-24 00:57:50+05:30 Cprogrammer Exp mbhangui $";
 #endif
 
 /*
@@ -156,16 +159,11 @@ sendMsg(va_alist)
 #endif
 {
 	va_list         ap;
-	char           *ptr, *fifo_path;
+	char           *fifo_path;
 	char            buf[2048];
 	static char     outbuf[512];
 	int             fd;
 	static substdio ssout;
-#ifdef SUN41
-	int             len;
-#else
-	unsigned        len;
-#endif
 #ifndef HAVE_STDARG_H
 	substdio       *sserr;
 	char           *summary;
@@ -211,7 +209,6 @@ sendMsg(va_alist)
 		return (1);
 	}
 	substdio_fdbuf(&ssout, (ssize_t (*)(int,  char *, size_t)) write, fd, outbuf, sizeof(outbuf));
-	for (len = 0, ptr = buf; *ptr++; len++);
 	/*-
 	 * scroll rownum clear string
 	 */
