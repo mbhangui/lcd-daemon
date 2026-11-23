@@ -21,6 +21,16 @@ jobs:
       uses: actions/checkout@v4
       with:
         path: main
+
+    - name: checkout_qmail
+      uses: actions/checkout@v4
+      with:
+        repository: mbhangui/libqmail
+        path: libqmail
+
+    - name: install_qmail
+      run: cd libqmail; ./default.configure; make; sudo make install-strip
+
     - name: checkout_wiringpi
       uses: actions/checkout@v4
       with:
